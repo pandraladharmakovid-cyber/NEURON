@@ -1,0 +1,27 @@
+name = "neuron-encrypted-relay"
+main = "src/index.ts"
+compatibility_date = "2026-07-01"
+
+# Production fails closed until the operator explicitly configures these values.
+[vars]
+ENVIRONMENT = "production"
+ENABLE_UPLOADS = "false"
+ALLOWED_ORIGINS = ""
+
+[[r2_buckets]]
+binding = "SHARES"
+bucket_name = "neuron-encrypted-shares"
+
+[[durable_objects.bindings]]
+name = "LIMITER"
+class_name = "RateLimiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RateLimiter"]
+
+[triggers]
+crons = ["17 * * * *"]
+
+# Set RATE_SALT using the provider's secret manager, not this file.
+# Configure a SAME-ORIGIN route /api/shares* on your real application domain.

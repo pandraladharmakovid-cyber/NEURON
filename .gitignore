@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+coverage/
+playwright-report/
+test-results/
+.DS_Store
+*.local
+
+# Local relay data is ciphertext and still must not be committed.
+.local/
+.dev.vars
+.wrangler/
+*.neuron-share-receipt.json

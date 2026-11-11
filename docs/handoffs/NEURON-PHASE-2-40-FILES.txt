@@ -1,0 +1,5106 @@
+NEURON — PHASE 2 / COMPLETE 40-FILE IMPLEMENTATION HANDOFF
+=========================================================
+This is the full Phase 2 code, NOT a patch containing omitted sections.
+Prerequisite: the applied and working Phase 1 handoff from this conversation.
+
+IMPORTANT: HOW TO APPLY THIS UPDATE
+-----------------------------------
+The intended repository root is c:\Users\pandr\Downloads\Neuron.
+Do not create a nested neuron or phase2 project. Back up/commit your current work.
+The assistant reviewed the Phase 1 baseline available in its workspace; it cannot
+read your Windows folder directly. Inspect and preserve any user modifications.
+
+Apply every numbered BEGIN FILE / END FILE section below to its relative path.
+Only text between CONTENT START and CONTENT END belongs in that file.
+This update consists of:
+  * 17 complete replacements for already implemented Phase 1 files;
+  * 14 implementations replacing earlier scaffold placeholders;
+  * 9 newly added paths.
+That is 40 file sections, not 40 new unique paths. Integration requires updating
+existing consumers. There will be 63 distinct implemented file paths across the
+two phases, not 80 unrelated implementations. Do not force the count to 80.
+
+Preserve all other files, including the two Phase 1 unit-test files. Do NOT rerun
+the scaffold generator, reset the repo, reapply Phase 1 over these updates, import
+unfinished scaffold stubs, or fake any feature. The three new test files extend
+Phase 1's tests: 5 test files / 40 tests total after this update.
+
+Finish/cancel current Phase 1 jobs and close old Phase 1 tabs before the first
+Phase 2 session. IndexedDB upgrades additively from version 1 to 2. Existing data is
+preserved; old Phase 1 source asking for database version 1 should not be run after
+that upgrade. Rolling back a MODEL is supported; rolling back the DB schema/app
+source is not implemented. Do not delete browser data to handle a version error.
+
+COMMANDS — RUN FROM THE EXISTING REPOSITORY ROOT
+-----------------------------------------------
+Requires Node.js 20.19+ or 22.12+ and pnpm 9.15.5. No API keys or secrets are needed.
+
+    pnpm install
+    pnpm typecheck
+    pnpm test
+    pnpm build
+    pnpm dev
+
+If pnpm is not installed: npm install --global pnpm@9.15.5
+If PowerShell blocks pnpm.ps1, use pnpm.cmd instead. Alternatively prefix each
+pnpm command with npx --yes pnpm@9.15.5 (omitting the word pnpm itself).
+Commit the real regenerated pnpm-lock.yaml after reviewing dependencies.
+
+Development usually serves localhost:5173. DEVELOPMENT DOES NOT INSTALL OFFLINE
+SERVICE WORKERS. To exercise offline reload, stop or leave dev on its own port,
+then start the real production preview:
+
+    pnpm build
+    pnpm --filter @neuron/web preview --port 4173 --strictPort
+
+Open http://localhost:4173. Go to Settings. Wait until Application shell says
+Installed, click Download image encoder, and wait for Verified. Now disconnect and
+reload. App, saved datasets, training and prediction can work without networking,
+subject to available browser APIs/resources and successful cache installation.
+
+ORIGIN WARNING: localhost:5173, localhost:4173, 127.0.0.1, a live-preview hostname
+and a deployed domain all have separate browser storage. Data not appearing on a
+new origin is not proof of deletion. Run Phase 2 at the OLD origin first, export a
+full project backup there, and restore it on the new origin. Encoder caches must
+be installed on each origin. Keep production and development on different ports
+so a production service worker does not accidentally serve a development session.
+
+PHASE 2 WORKING FEATURES
+------------------------
+1. Production offline app shell
+   - Build-generated service worker precaches JS/CSS including lazy routes.
+   - Revision includes worker template, public shell resources and emitted assets.
+   - A failed new cache installation does not replace the active shell cache.
+   - Waiting updates do not force skipWaiting. Explicit update UI uses Web Locks
+     to coordinate active training/download/backup tasks across same-origin tabs.
+   - Retained prior shell chunks can serve already-open older tabs. Old shell caches
+     are not automatically purged yet; this favors compatibility over disk cleanup.
+2. Persistent encoder pack
+   - Exact 5-file MobileNet V2 pack: JSON plus four weight shards, about 14 MB.
+   - SHA-256 and byte-size pins were obtained from actual downloaded assets.
+   - Streamed bounded downloads, cancel, staging cache, one-pointer commit.
+   - Each cached artifact is integrity-checked before use. No unverified fallback.
+   - TensorFlow.js IOHandler loads directly from verified Cache Storage, so cold-page
+     offline training/inference does not depend on remote model endpoints.
+3. Full project backup and restore
+   - Includes normalized JPEG samples, classes, all model versions, active selection
+     and pending feedback; model-only export remains separate.
+   - Explicit consent before exporting unencrypted image-containing backups.
+   - Bounded JSON (no ZIP decompression), schema/shape checks, image SHA checks,
+     JPEG decoding and 768px dimension limits before atomic database writes.
+   - Always creates a new project, remapping record/model IDs. Never overwrites an
+     existing project. Failed parsing/validation leaves existing projects intact.
+4. Reviewed evolution
+   - Explicit consent saves the prediction image and corrected class into a local
+     queue. Review before approving. No silent dataset collection or retraining.
+   - Approval moves the item into the dataset; discard deletes only the queue item.
+   - Retrain manually, compare saved versions, then activate or roll back a model.
+   - Byte-level duplicate detection prevents the same normalized image being added
+     twice to a project, even with different labels. It is not semantic detection.
+5. Honest comparison
+   - Training artifacts now record dataset and actual validation-set fingerprints.
+   - Comparison warns when held-out image sets/classes differ or metadata is absent.
+   - Phase 1 models remain accepted; their comparison provenance is simply unknown.
+6. Additive DB migration, focused tests, and matching responsive dark UI.
+
+BOUNDARIES AND LIMITS — DO NOT HIDE THESE FROM THE USER
+-------------------------------------------------------
+This phase is real code, but the entire planned multi-modality product is NOT done.
+No encrypted online sharing, WebRTC, non-image training, worker-isolated training,
+continuous camera streaming, independent test-set UI, resumable training or universal
+hardware guarantee yet. Training still uses asynchronous main-thread TFJS work.
+WebGL is preferred with CPU fallback; WebGPU is not a claimed training backend.
+
+Browser storage/caches can be cleared/evicted. Persistent-storage requests do not
+replace backups. Cache corruption is detected; user can remove/reinstall the pack.
+If the upstream model changes, pins intentionally fail closed; investigate and review
+license/provenance before intentionally updating them. Do not disable hash checks.
+Encoder-source requests expose connection metadata; your images are not uploaded.
+
+Backups contain sensitive image data and are NOT ENCRYPTED. Limits: 1,000 samples,
+100 queued feedback items, 50 model versions, 32 MB image data / 64 MB total JSON.
+A model-only export is not a dataset backup. Both models and labels can leak info.
+Validation performance is not independent test performance, and scores are not
+calibrated probabilities. Fingerprints do not remove model-selection bias or detect
+near-duplicate frames. Staged downloads are cancellable, not resumable across reloads.
+
+Updates without Web Locks: close ALL NEURON tabs and reopen to activate the waiting
+worker safely. Guarded tasks include training, encoder downloads and backup work;
+this is not a general database lock against every simultaneous manual tab edit.
+Finish edits before applying updates. Do not promise unlimited concurrent editing.
+
+Deployment assumes origin root /. Use HTTPS except localhost. Configure real host
+security headers and correct JS MIME types. The Phase 1 public/_headers file applies
+only on hosts that support it; hosting infrastructure remains an explicit later task.
+OS/browser PWA installability varies; a manifest with an SVG icon is not an install
+certification for every phone. Physical-device, accessibility, security, operational
+and model-license reviews remain release gates, not tests this bundle invents.
+
+VERIFICATION ACTUALLY RUN HERE
+------------------------------
+Environment: Node.js 20.20.2, pnpm 9.15.5, TypeScript 5.7.3, Vite 6.4.6,
+Vitest 4.1.12, headless Chromium using software WebGL/SwiftShader.
+
+Combined-workspace check:
+- Rebuilt the original 262-path scaffold, applied the Phase 1 baseline, then these
+  Phase 2 files. pnpm installation passed across all 9 workspace projects.
+- pnpm typecheck: passed.
+- pnpm build: passed, including generated service-worker.js.
+- pnpm test: 5 files, 40 tests passed, no unhandled errors.
+- pnpm audit: no known advisories reported at verification time. Point-in-time only;
+  not a claim that the app or its dependencies are proven secure.
+
+Production Chromium workflow, using UI rather than mocked training:
+- Installed the production shell and downloaded/verified actual pinned encoder.
+- Created project; ingested 12 generated PNG images through the upload UI.
+- Tried to add a duplicate image and confirmed rejection.
+- Set browser context OFFLINE; navigated to a fresh training page.
+- Trained a real classifier for 3 epochs using the cached encoder; model was saved.
+- Navigated to Predict, ingested an unseen image and ran actual inference offline.
+- Checked consent; queued feedback; opened review page and approved it (13 samples).
+- Exported full backup offline: 13 images and 1 saved model version.
+- Restored that file through the UI as a new project offline.
+- Verified database totals: 2 projects, 26 images, 2 model-version records.
+- Opened a cold page and predicted using the restored model while still offline.
+- Corrupted a cached shard and confirmed the integrity error was shown.
+- Rendered desktop and 390px mobile evolution UI, no horizontal document overflow.
+- No uncaught browser exceptions in that tested workflow.
+
+Separate real service-worker lifecycle check:
+- Held a shared activity lock in a second same-origin tab.
+- Triggered a waiting service-worker update and clicked Apply safe update.
+- Confirmed the active cross-tab job blocked the update.
+- Released the activity lock and confirmed activation plus page reload succeeded.
+
+Unit tests cover known SHA-256, backup limits/roundtrips/tampering/schema rejection,
+encoder manifest boundary, activity cleanup, v1→v2 preservation of project/sample/
+model records, feedback approval/discard/deduplication, project cleanup, comparison
+rules and safe version activation. Phase 1's 18 tests still run unchanged.
+The tiny synthetic validation score is pipeline evidence, not real-world accuracy.
+Webcam hardware, all mobile browsers, storage-pressure eviction, every power-loss
+race, production hosting headers and long-session GPU memory have not been certified.
+
+Build warning: TensorFlow chunk is ~1.87 MB minified / ~303 KB gzip and exceeds
+Vite's 500 KB advisory threshold. Build succeeds. Do not hide or misreport the warning.
+
+MANUAL ACCEPTANCE ON YOUR MACHINE
+---------------------------------
+[ ] Back up/commit source before replacing the 40 files.
+[ ] Apply all sections; install; typecheck; run 40 tests; build.
+[ ] Use existing Phase 1 origin first; confirm old projects still exist after v2 upgrade.
+[ ] Create a FULL backup at that origin before moving to production preview origin.
+[ ] On localhost:4173 verify shell Installed and encoder Verified; then test offline.
+[ ] Train on diverse real examples, not just synthetic images or duplicate frames.
+[ ] Test feedback consent, approve/discard, manual retrain and version activation.
+[ ] Restore a backup to a new project and compare predictions with the original.
+[ ] Reject malformed/corrupt files without deleting existing work.
+[ ] Stop/deny camera; verify permission behavior on your actual browser/hardware.
+[ ] Test keyboard navigation, modal close, mobile and screen-reader flows.
+[ ] Keep original images and backups outside browser-managed storage.
+[ ] Do not claim later scaffold modules are working or ready for deployment.
+
+FILE INDEX
+----------
+01. apps/web/package.json [UPDATE PHASE 1]
+    Browser dependency/version update; adds isolated IndexedDB test implementation.
+02. apps/web/vite.config.ts [UPDATE PHASE 1]
+    Production offline build plugin and revisioned precache generation.
+03. apps/web/src/main.tsx [UPDATE PHASE 1]
+    Entry registration, manifest/icon linking and Phase 2 styles.
+04. apps/web/src/lib/types.ts [UPDATE PHASE 1]
+    Additive sample hash, model provenance and feedback types.
+05. apps/web/src/lib/db.ts [UPDATE PHASE 1]
+    Additive v2 database, atomic records/snapshots and safe activation.
+06. apps/web/src/lib/checksums.ts [NEW PATH]
+    SHA-256 helpers and hash-shape checks.
+07. apps/web/src/pwa/update-manager.ts [IMPLEMENT SCAFFOLD]
+    Cross-tab guarded activities and safe waiting-update activation.
+08. apps/web/src/pwa/register.ts [IMPLEMENT SCAFFOLD]
+    Production service-worker registration and observable readiness state.
+09. apps/web/src/pwa/service-worker.ts [IMPLEMENT SCAFFOLD]
+    Offline shell, activation policy and previous hashed-chunk compatibility.
+10. apps/web/src/pwa/asset-manager.ts [IMPLEMENT SCAFFOLD]
+    Pinned persistent encoder pack, bounded downloads and verified cached IOHandler.
+11. apps/web/src/lib/ml.ts [UPDATE PHASE 1]
+    Loads the actual MobileNet encoder from the verified pack, preserving preprocessing.
+12. apps/web/src/lib/download.ts [IMPLEMENT SCAFFOLD]
+    Local download and filename helpers.
+13. apps/web/src/lib/backup-format.ts [NEW PATH]
+    Bounded full-project JSON codec, integrity checks and identifier remapping.
+14. apps/web/src/features/settings/BackupPanel.tsx [NEW PATH]
+    Sensitive-backup consent UI and validated atomic restore.
+15. apps/web/src/features/settings/RuntimeSettings.tsx [IMPLEMENT SCAFFOLD]
+    Offline readiness, verified pack install/cancel/removal and update checks.
+16. apps/web/src/components/layout/OfflineBanner.tsx [IMPLEMENT SCAFFOLD]
+    Offline and waiting-update UI with actionable errors.
+17. apps/web/src/components/layout/AppShell.tsx [UPDATE PHASE 1]
+    Integrates the real Phase 2 status banner into the existing layout.
+18. apps/web/src/features/datasets/dataset.service.ts [UPDATE PHASE 1]
+    Normalized-image deduplication and transactional sample bounds.
+19. apps/web/src/features/training/training.service.ts [UPDATE PHASE 1]
+    Real training with activity guards and validation-set provenance.
+20. apps/web/src/lib/model-format.ts [UPDATE PHASE 1]
+    Backward-compatible artifact validation including optional provenance.
+21. apps/web/src/features/evolution/evolution.service.ts [IMPLEMENT SCAFFOLD]
+    Consented queue persistence, transactional approval/discard and comparisons.
+22. apps/web/src/features/inference/FeedbackCapture.tsx [NEW PATH]
+    User-approved prediction-to-feedback capture UI.
+23. apps/web/src/features/evolution/FeedbackQueue.tsx [IMPLEMENT SCAFFOLD]
+    Local feedback review before adding images to the training dataset.
+24. apps/web/src/features/evolution/ComparisonPanel.tsx [IMPLEMENT SCAFFOLD]
+    Version comparison with held-out-set comparability warnings.
+25. apps/web/src/features/evolution/VersionHistory.tsx [IMPLEMENT SCAFFOLD]
+    Model activation/rollback and exports without rewriting model versions.
+26. apps/web/src/pages/EvolutionPage.tsx [NEW PATH]
+    Integrated evolution workspace: review, compare, activate.
+27. apps/web/src/app/App.tsx [UPDATE PHASE 1]
+    Lazy route for the evolution workspace.
+28. apps/web/src/pages/PredictPage.tsx [UPDATE PHASE 1]
+    Prediction feedback capture and safe model activation integration.
+29. apps/web/src/pages/TrainingPage.tsx [UPDATE PHASE 1]
+    Training workflow entry to reviewed evolution and encoder status language.
+30. apps/web/src/pages/SettingsPage.tsx [UPDATE PHASE 1]
+    Adds offline readiness/full backup panels; keeps Phase 1 model import/storage controls.
+31. apps/web/src/pages/HomePage.tsx [UPDATE PHASE 1]
+    Accurate Phase 2 feature availability language.
+32. apps/web/public/manifest.webmanifest [IMPLEMENT SCAFFOLD]
+    Local PWA metadata and icon declaration.
+33. apps/web/public/favicon.svg [IMPLEMENT SCAFFOLD]
+    Local SVG NEURON application icon.
+34. apps/web/public/offline.html [IMPLEMENT SCAFFOLD]
+    Local recovery document for missing offline shell.
+35. apps/web/src/styles/phase2.css [NEW PATH]
+    Responsive feedback, backup and evolution styling.
+36. README.md [UPDATE PHASE 1]
+    Complete current setup, privacy, offline, backup and phase-boundary documentation.
+37. apps/web/src/test/offline-assets.test.ts [NEW PATH]
+    Four encoder-boundary and guarded activity tests.
+38. apps/web/src/test/backup-format.test.ts [NEW PATH]
+    Eight backup/checksum/limit/tampering tests.
+39. apps/web/src/test/storage-evolution.test.ts [NEW PATH]
+    Ten migration, consent, cleanup, comparison and activation tests.
+40. apps/web/src/pages/ProjectPage.tsx [UPDATE PHASE 1]
+    Dataset entry point to feedback, version comparison and rollback.
+
+Each source section includes a SHA-256 checksum over its exact UTF-8/LF contents.
+No delimiter/checksum lines belong in the source files.
+
+===== BEGIN FILE 01/40: apps/web/package.json =====
+SHA256: 8855b0af02d81db3e8fa731e5a15ea51cdf0e3f0bf2bb73c87936a322c38e5d9
+----- CONTENT START -----
+{
+  "name": "@neuron/web",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tensorflow-models/mobilenet": "2.1.1",
+    "@tensorflow/tfjs": "4.22.0",
+    "idb": "8.0.2",
+    "lucide-react": "0.468.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5",
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
+    "@vitejs/plugin-react": "4.3.4",
+    "typescript": "5.7.3",
+    "vite": "6.4.6",
+    "vitest": "4.1.12",
+    "fake-indexeddb": "6.2.4"
+  }
+}
+----- CONTENT END -----
+===== END FILE: apps/web/package.json =====
+
+===== BEGIN FILE 02/40: apps/web/vite.config.ts =====
+SHA256: 95e54a9b8990026e539688b50bc409f494aa1d825274f20e6a3634badf578336
+----- CONTENT START -----
+import { defineConfig, transformWithEsbuild, type Plugin } from "vite";
+import react from "@vitejs/plugin-react";
+import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+function offlineShell(): Plugin {
+  return {
+    name: "neuron-offline-shell",
+    apply: "build",
+    enforce: "post",
+    async generateBundle(_, bundle) {
+      const paths = [
+        "/offline.html",
+        "/favicon.svg",
+        "/manifest.webmanifest",
+        ...Object.keys(bundle)
+          .filter((p) => !p.endsWith(".map"))
+          .map((p) => "/" + p),
+      ].sort();
+      const workerTemplate = readFileSync(
+        new URL("./src/pwa/service-worker.ts", import.meta.url),
+        "utf8",
+      );
+      const publicRevision = [
+        "offline.html",
+        "favicon.svg",
+        "manifest.webmanifest",
+      ]
+        .map((name) =>
+          readFileSync(new URL("./public/" + name, import.meta.url), "utf8"),
+        )
+        .join("\n");
+      const revision = createHash("sha256")
+        .update(workerTemplate)
+        .update(publicRevision)
+        .update(paths.join("\n"))
+        .update(
+          String(
+            bundle["index.html"]?.type === "asset"
+              ? bundle["index.html"].source
+              : "",
+          ),
+        )
+        .digest("hex")
+        .slice(0, 16);
+      const source = readFileSync(
+        new URL("./src/pwa/service-worker.ts", import.meta.url),
+        "utf8",
+      )
+        .replace("__NEURON_PRECACHE__", JSON.stringify(paths))
+        .replace("__NEURON_REVISION__", revision);
+      const compiled = await transformWithEsbuild(source, "service-worker.ts", {
+        loader: "ts",
+        target: "es2022",
+        minify: true,
+      });
+      this.emitFile({
+        type: "asset",
+        fileName: "service-worker.js",
+        source: compiled.code,
+      });
+    },
+  };
+}
+export default defineConfig({
+  plugins: [react(), offlineShell()],
+  server: { host: "0.0.0.0", allowedHosts: [".e2b.app", "localhost"] },
+  preview: { host: "0.0.0.0", allowedHosts: [".e2b.app", "localhost"] },
+  build: {
+    target: "es2022",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("@tensorflow")) return "tensorflow";
+        },
+      },
+    },
+  },
+});
+----- CONTENT END -----
+===== END FILE: apps/web/vite.config.ts =====
+
+===== BEGIN FILE 03/40: apps/web/src/main.tsx =====
+SHA256: 945e0ad5ee4ccfcdcab180bb42b603f7fef15f37ac1ca951386ac8b752ab26f0
+----- CONTENT START -----
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { App } from "./app/App";
+import { ErrorBoundary } from "./app/ErrorBoundary";
+import "./styles/tokens.css";
+import "./styles/global.css";
+import "./styles/phase2.css";
+import { registerOffline } from "./pwa/register";
+void registerOffline();
+createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </React.StrictMode>,
+);
+----- CONTENT END -----
+===== END FILE: apps/web/src/main.tsx =====
+
+===== BEGIN FILE 04/40: apps/web/src/lib/types.ts =====
+SHA256: ea091d04b73bf3bbeaca58fe9678053bdbeb6ff5aeafcde1cde9d7427acd7047
+----- CONTENT START -----
+export type Label = { id: string; name: string };
+export type Project = {
+  id: string;
+  name: string;
+  createdAt: number;
+  updatedAt: number;
+  labels: Label[];
+  activeVersionId?: string;
+};
+export type Sample = {
+  id: string;
+  projectId: string;
+  labelId: string;
+  blob: Blob;
+  createdAt: number;
+  hash?: string;
+};
+export type EpochMetric = {
+  epoch: number;
+  loss: number;
+  accuracy: number;
+  valLoss: number;
+  valAccuracy: number;
+};
+export type Evaluation = {
+  accuracy: number;
+  matrix: number[][];
+  total: number;
+};
+export type ModelArtifact = {
+  provenance?: {
+    datasetHash: string;
+    validationHash: string;
+    seed: number;
+    sampleCount: number;
+  };
+  format: "neuron-image";
+  version: 1;
+  encoder: "mobilenet-v2-1.0";
+  embeddingSize: 1280;
+  labels: Label[];
+  weightSpecs: Array<{ name: string; shape: number[]; dtype: "float32" }>;
+  weightData: string;
+  epochs: EpochMetric[];
+  evaluation: Evaluation;
+  createdAt: number;
+};
+export type ModelVersion = {
+  id: string;
+  projectId: string;
+  artifact: ModelArtifact;
+  createdAt: number;
+};
+export type Prediction = { label: string; score: number };
+export const errorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "An unexpected error occurred.";
+export const uid = () => crypto.randomUUID();
+
+export type FeedbackItem = {
+  id: string;
+  projectId: string;
+  versionId: string;
+  labelId: string;
+  blob: Blob;
+  createdAt: number;
+  predictedLabel: string;
+};
+----- CONTENT END -----
+===== END FILE: apps/web/src/lib/types.ts =====
+
+===== BEGIN FILE 05/40: apps/web/src/lib/db.ts =====
+SHA256: 0e16da3a61763d835ce1097264b310eddc71e6f74ddd0f1d19ee6dab345745ab
+----- CONTENT START -----
+import { openDB, type DBSchema } from "idb";
+import type { Project, Sample, ModelVersion, FeedbackItem } from "./types";
+export interface NeuronDB extends DBSchema {
+  projects: { key: string; value: Project };
+  samples: { key: string; value: Sample; indexes: { "by-project": string } };
+  versions: {
+    key: string;
+    value: ModelVersion;
+    indexes: { "by-project": string };
+  };
+  feedback: {
+    key: string;
+    value: FeedbackItem;
+    indexes: { "by-project": string };
+  };
+}
+let connection: ReturnType<typeof openDB<NeuronDB>> | undefined;
+export function database() {
+  if (!("indexedDB" in globalThis))
+    throw new Error("IndexedDB unavailable. Use a normal browser window.");
+  return (connection ??= openDB<NeuronDB>("neuron-local", 2, {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        db.createObjectStore("projects", { keyPath: "id" });
+        db.createObjectStore("samples", { keyPath: "id" }).createIndex(
+          "by-project",
+          "projectId",
+        );
+        db.createObjectStore("versions", { keyPath: "id" }).createIndex(
+          "by-project",
+          "projectId",
+        );
+      }
+      if (oldVersion < 2)
+        db.createObjectStore("feedback", { keyPath: "id" }).createIndex(
+          "by-project",
+          "projectId",
+        );
+    },
+    blocking() {
+      connection?.then((db) => db.close());
+      connection = undefined;
+    },
+    terminated() {
+      connection = undefined;
+    },
+  }));
+}
+export async function closeDatabase() {
+  const db = await connection;
+  db?.close();
+  connection = undefined;
+}
+export async function saveProject(project: Project) {
+  const db = await database();
+  const tx = trackTransaction(db.transaction("projects", "readwrite"));
+  const previous = await tx.store.get(project.id);
+  // Creation uses a fresh UUID. Existing callers may edit metadata, but cannot inject raw samples.
+  await tx.store.put({
+    ...project,
+    updatedAt: Math.max(project.updatedAt, previous?.updatedAt ?? 0),
+  });
+  await tx.done;
+}
+export async function listProjects() {
+  return (await (await database()).getAll("projects")).sort(
+    (a, b) => b.updatedAt - a.updatedAt,
+  );
+}
+export async function getProject(id: string) {
+  return (await database()).get("projects", id);
+}
+export async function listSamples(id: string) {
+  return (await database()).getAllFromIndex("samples", "by-project", id);
+}
+export async function listVersions(id: string) {
+  return (
+    await (await database()).getAllFromIndex("versions", "by-project", id)
+  ).sort((a, b) => b.createdAt - a.createdAt);
+}
+export async function deleteProject(id: string) {
+  const db = await database();
+  const tx = trackTransaction(
+    db.transaction(
+      ["projects", "samples", "versions", "feedback"],
+      "readwrite",
+    ),
+  );
+  await tx.objectStore("projects").delete(id);
+  for (const name of ["samples", "versions", "feedback"] as const)
+    for (const key of await tx
+      .objectStore(name)
+      .index("by-project")
+      .getAllKeys(id))
+      await tx.objectStore(name).delete(key);
+  await tx.done;
+}
+export async function commitVersion(version: ModelVersion) {
+  const db = await database();
+  const tx = trackTransaction(
+    db.transaction(["projects", "versions"], "readwrite"),
+  );
+  const project = await tx.objectStore("projects").get(version.projectId);
+  if (!project) {
+    tx.abort();
+    await tx.done.catch(() => {});
+    throw new Error("Project no longer exists.");
+  }
+  await tx.objectStore("versions").add(version);
+  await tx
+    .objectStore("projects")
+    .put({ ...project, activeVersionId: version.id, updatedAt: Date.now() });
+  await tx.done;
+}
+export async function activateVersion(projectId: string, versionId: string) {
+  const db = await database();
+  const tx = trackTransaction(
+    db.transaction(["projects", "versions"], "readwrite"),
+  );
+  const p = await tx.objectStore("projects").get(projectId),
+    v = await tx.objectStore("versions").get(versionId);
+  if (!p || !v || v.projectId !== projectId) {
+    tx.abort();
+    await tx.done.catch(() => {});
+    throw new Error("Model version not found.");
+  }
+  await tx
+    .objectStore("projects")
+    .put({ ...p, activeVersionId: versionId, updatedAt: Date.now() });
+  await tx.done;
+}
+export async function deleteLabel(project: Project, labelId: string) {
+  const db = await database();
+  const tx = trackTransaction(
+    db.transaction(["projects", "samples", "feedback"], "readwrite"),
+  );
+  const current = await tx.objectStore("projects").get(project.id);
+  if (!current || current.labels.length <= 2) {
+    tx.abort();
+    await tx.done.catch(() => {});
+    throw new Error("At least two classes are required.");
+  }
+  for (const store of ["samples", "feedback"] as const)
+    for (const s of await tx
+      .objectStore(store)
+      .index("by-project")
+      .getAll(project.id))
+      if (s.labelId === labelId) await tx.objectStore(store).delete(s.id);
+  await tx
+    .objectStore("projects")
+    .put({
+      ...current,
+      labels: current.labels.filter((l) => l.id !== labelId),
+      updatedAt: Date.now(),
+    });
+  await tx.done;
+}
+export async function importVersion(project: Project, version: ModelVersion) {
+  const db = await database();
+  const tx = trackTransaction(
+    db.transaction(
+      ["projects", "samples", "versions", "feedback"],
+      "readwrite",
+    ),
+  );
+  const current = await tx.objectStore("projects").get(project.id);
+  if (!current) {
+    tx.abort();
+    await tx.done.catch(() => {});
+    throw new Error("Project no longer exists.");
+  }
+  for (const store of ["samples", "feedback"] as const)
+    for (const key of await tx
+      .objectStore(store)
+      .index("by-project")
+      .getAllKeys(project.id))
+      await tx.objectStore(store).delete(key);
+  await tx.objectStore("versions").add(version);
+  await tx
+    .objectStore("projects")
+    .put({
+      ...current,
+      labels: version.artifact.labels,
+      activeVersionId: version.id,
+      updatedAt: Date.now(),
+    });
+  await tx.done;
+}
+export async function snapshotProject(id: string) {
+  const db = await database();
+  const tx = trackTransaction(
+    db.transaction(["projects", "samples", "versions", "feedback"], "readonly"),
+  );
+  const [project, samples, versions, feedback] = await Promise.all([
+    tx.objectStore("projects").get(id),
+    tx.objectStore("samples").index("by-project").getAll(id),
+    tx.objectStore("versions").index("by-project").getAll(id),
+    tx.objectStore("feedback").index("by-project").getAll(id),
+  ]);
+  await tx.done;
+  if (!project) throw new Error("Project not found.");
+  return { project, samples, versions, feedback };
+}
+
+export function trackTransaction<T extends { done: Promise<unknown> }>(
+  tx: T,
+): T {
+  void tx.done.catch(() => {});
+  return tx;
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/lib/db.ts =====
+
+===== BEGIN FILE 06/40: apps/web/src/lib/checksums.ts =====
+SHA256: f0e20ea9a091762285a25948fdb18f397b8c8ca1d497e24f1383da30ec1b525c
+----- CONTENT START -----
+export async function sha256(value: Blob | ArrayBuffer | Uint8Array | string) {
+  const data =
+    typeof value === "string"
+      ? new TextEncoder().encode(value)
+      : value instanceof Blob
+        ? await value.arrayBuffer()
+        : value;
+  const hash = await crypto.subtle.digest("SHA-256", data as BufferSource);
+  return Array.from(new Uint8Array(hash), (b) =>
+    b.toString(16).padStart(2, "0"),
+  ).join("");
+}
+export function validHash(value: unknown): value is string {
+  return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/lib/checksums.ts =====
+
+===== BEGIN FILE 07/40: apps/web/src/pwa/update-manager.ts =====
+SHA256: 49d85ad685e9594925e486d78e4a57070d67cfdfa5ce89ea974706b7447b5390
+----- CONTENT START -----
+let jobs = 0;
+const listeners = new Set<() => void>();
+function notify() {
+  for (const fn of listeners) fn();
+}
+export function activeJobs() {
+  return jobs;
+}
+export function subscribeJobs(fn: () => void) {
+  listeners.add(fn);
+  return () => {
+    listeners.delete(fn);
+  };
+}
+export async function runActivity<T>(task: () => Promise<T>): Promise<T> {
+  const run = async () => {
+    jobs++;
+    notify();
+    try {
+      return await task();
+    } finally {
+      jobs--;
+      notify();
+    }
+  };
+  if (typeof navigator !== "undefined" && navigator.locks)
+    return navigator.locks.request("neuron-busy", { mode: "shared" }, run);
+  return run();
+}
+export async function installUpdate(registration: ServiceWorkerRegistration) {
+  if (!registration.waiting) throw new Error("No waiting update is available.");
+  if (!navigator.locks)
+    throw new Error(
+      "Safe cross-tab updates require Web Locks. Close ALL NEURON tabs and reopen to apply the waiting update.",
+    );
+  await navigator.locks.request(
+    "neuron-busy",
+    { mode: "exclusive", ifAvailable: true },
+    async (lock) => {
+      if (!lock || jobs)
+        throw new Error(
+          "A job is active in a NEURON tab. Finish or cancel it before updating.",
+        );
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          navigator.serviceWorker.removeEventListener(
+            "controllerchange",
+            changed,
+          );
+          reject(
+            new Error("Update timed out. Close all NEURON tabs and reopen."),
+          );
+        }, 15000);
+        const changed = () => {
+          clearTimeout(timer);
+          navigator.serviceWorker.removeEventListener(
+            "controllerchange",
+            changed,
+          );
+          resolve();
+        };
+        navigator.serviceWorker.addEventListener("controllerchange", changed);
+        registration.waiting?.postMessage({ type: "ACTIVATE_UPDATE" });
+      });
+      location.reload();
+    },
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pwa/update-manager.ts =====
+
+===== BEGIN FILE 08/40: apps/web/src/pwa/register.ts =====
+SHA256: df95679668fad20b940e8b0b5169869cca8bc3d7abafb470d9fa7c86c0159e4f
+----- CONTENT START -----
+let registration: ServiceWorkerRegistration | undefined;
+const subscribers = new Set<() => void>();
+function changed() {
+  subscribers.forEach((fn) => fn());
+}
+export const offlineState = {
+  supported: false,
+  controlled: false,
+  updateAvailable: false,
+  error: "",
+};
+export function subscribeOffline(fn: () => void) {
+  subscribers.add(fn);
+  return () => {
+    subscribers.delete(fn);
+  };
+}
+export function getRegistration() {
+  return registration;
+}
+export async function registerOffline() {
+  const icon = document.createElement("link");
+  icon.rel = "icon";
+  icon.href = "/favicon.svg";
+  document.head.append(icon);
+  const manifest = document.createElement("link");
+  manifest.rel = "manifest";
+  manifest.href = "/manifest.webmanifest";
+  document.head.append(manifest);
+  if (!import.meta.env.PROD) return;
+  if (!("serviceWorker" in navigator) || !window.isSecureContext) {
+    offlineState.error =
+      "Offline installation requires HTTPS or localhost and service-worker support.";
+    changed();
+    return;
+  }
+  offlineState.supported = true;
+  try {
+    registration = await navigator.serviceWorker.register(
+      "/service-worker.js",
+      { type: "module", scope: "/" },
+    );
+    function inspect() {
+      offlineState.controlled = !!navigator.serviceWorker.controller;
+      offlineState.updateAvailable = !!registration?.waiting;
+      changed();
+    }
+    inspect();
+    navigator.serviceWorker.addEventListener("controllerchange", inspect);
+    registration.addEventListener("updatefound", () => {
+      registration?.installing?.addEventListener("statechange", inspect);
+    });
+    await navigator.serviceWorker.ready;
+    inspect();
+  } catch (e) {
+    offlineState.error =
+      e instanceof Error ? e.message : "Offline installation failed.";
+    changed();
+  }
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pwa/register.ts =====
+
+===== BEGIN FILE 09/40: apps/web/src/pwa/service-worker.ts =====
+SHA256: b2fed5837df8dc5f8a09343627ad9733ed70c8f945081eda4425d5a02970f2f3
+----- CONTENT START -----
+/// <reference lib="webworker" />
+export {};
+const worker = globalThis as unknown as ServiceWorkerGlobalScope;
+// Replaced by the production Vite plugin, never evaluated dynamically.
+const ASSETS: string[] = __NEURON_PRECACHE__;
+const CACHE = "neuron-shell-__NEURON_REVISION__";
+declare const __NEURON_PRECACHE__: string[];
+worker.addEventListener("install", (event) => {
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE);
+      try {
+        await cache.addAll(
+          ASSETS.map((path) => new Request(path, { cache: "reload" })),
+        );
+      } catch (e) {
+        await caches.delete(CACHE);
+        throw e;
+      }
+      // Do not skipWaiting: an existing tab must explicitly authorize the update.
+    })(),
+  );
+});
+worker.addEventListener("activate", (event) =>
+  event.waitUntil(
+    (async () => {
+      // Keep prior shell caches. Existing tabs may still reference old lazy chunks.
+      // Their explicit cleanup is a later feature, not a destructive automatic action.
+      await worker.clients.claim();
+    })(),
+  ),
+);
+worker.addEventListener("message", (event) => {
+  if (event.data?.type === "ACTIVATE_UPDATE")
+    event.waitUntil(worker.skipWaiting());
+});
+worker.addEventListener("fetch", (event) => {
+  const request = event.request,
+    url = new URL(request.url);
+  if (request.method !== "GET" || url.origin !== worker.location.origin) return;
+  if (request.mode === "navigate") {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE);
+        return (
+          (await cache.match("/index.html")) ??
+          (await cache.match("/offline.html")) ??
+          new Response("Offline app unavailable.", { status: 503 })
+        );
+      })(),
+    );
+    return;
+  }
+  if (
+    ASSETS.includes(url.pathname) ||
+    /^\/assets\/[^/]+\.(js|css)$/.test(url.pathname)
+  )
+    event.respondWith(
+      (async () => {
+        const current = await caches.open(CACHE);
+        const hit = await current.match(url.pathname);
+        if (hit) return hit;
+        // A previous tab can still reference a previous content-hashed lazy chunk.
+        for (const name of await caches.keys()) {
+          if (name === CACHE || !name.startsWith("neuron-shell-")) continue;
+          const cached = await (await caches.open(name)).match(url.pathname);
+          if (cached) return cached;
+        }
+        return fetch(request);
+      })(),
+    );
+});
+----- CONTENT END -----
+===== END FILE: apps/web/src/pwa/service-worker.ts =====
+
+===== BEGIN FILE 10/40: apps/web/src/pwa/asset-manager.ts =====
+SHA256: 4dd33fd54e25d6a4e443d996611c4b44720e7afb833153e345683caa098135d3
+----- CONTENT START -----
+import type { io } from "@tensorflow/tfjs";
+import { sha256 } from "../lib/checksums";
+import { runActivity } from "./update-manager";
+export const PACK_ID = "mobilenet-v2-1.0-pinned-2026-11";
+export const MODEL_FILES = [
+  {
+    name: "model.json",
+    bytes: 86414,
+    hash: "62c47d7f217d49a68528ea88d4bbbf1b09d0a13892eeff14b3e41ff6878de099",
+  },
+  {
+    name: "group1-shard1of4.bin",
+    bytes: 4194304,
+    hash: "a37058241ca33e2427683001d5cc00a2164a41c07d7373b435594c0e7319dd68",
+  },
+  {
+    name: "group1-shard2of4.bin",
+    bytes: 4194304,
+    hash: "8da74e0230284f5028a979d2bd652ec569943bcb19e45ff027a923e718e75d11",
+  },
+  {
+    name: "group1-shard3of4.bin",
+    bytes: 4194304,
+    hash: "b7c206e89fb85fec5fe18a1bf5e0b4aa5d9c502636b60930bf1f1dae58ca9bd1",
+  },
+  {
+    name: "group1-shard4of4.bin",
+    bytes: 1373484,
+    hash: "109deb891cb50db7dea8c70bfd2e37e0db38de9891f63a8d5f40633645f4017d",
+  },
+] as const;
+const INDEX_CACHE = "neuron-model-index-v1",
+  INDEX_URL = "/__neuron_pack_index__";
+const source =
+  "https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/classification/2/";
+function key(name: string) {
+  return new URL("/__neuron_pack__/" + PACK_ID + "/" + name, location.origin)
+    .href;
+}
+export function validateEncoderManifest(value: unknown) {
+  const model = value as {
+    modelTopology?: object;
+    weightsManifest?: Array<{
+      paths: string[];
+      weights: io.WeightsManifestEntry[];
+    }>;
+    signature?: io.ModelArtifacts["signature"];
+    userDefinedMetadata?: io.ModelArtifacts["userDefinedMetadata"];
+  };
+  if (
+    !model ||
+    typeof model.modelTopology !== "object" ||
+    !Array.isArray(model.weightsManifest) ||
+    model.weightsManifest.length !== 1
+  )
+    throw new Error("Unsupported encoder manifest.");
+  if (
+    JSON.stringify(model.weightsManifest[0].paths) !==
+    JSON.stringify(MODEL_FILES.slice(1).map((f) => f.name))
+  )
+    throw new Error("Unexpected encoder shard paths.");
+  return model;
+}
+async function pointer() {
+  if (!("caches" in globalThis))
+    throw new Error(
+      "Persistent model packs require Cache Storage in HTTPS or localhost.",
+    );
+  const response = await (await caches.open(INDEX_CACHE)).match(INDEX_URL);
+  if (!response) return null;
+  try {
+    const p = await response.json();
+    return p.id === PACK_ID &&
+      typeof p.cache === "string" &&
+      p.cache.startsWith("neuron-pack-")
+      ? (p.cache as string)
+      : null;
+  } catch {
+    return null;
+  }
+}
+async function verified(cache: Cache, name: string) {
+  const spec = MODEL_FILES.find((f) => f.name === name);
+  if (!spec) throw new Error("Unknown asset.");
+  const response = await cache.match(key(name));
+  if (!response) throw new Error("Model pack is incomplete.");
+  const data = await response.arrayBuffer();
+  if (data.byteLength !== spec.bytes || (await sha256(data)) !== spec.hash)
+    throw new Error(
+      "Model pack integrity check failed. Remove and download the pack again.",
+    );
+  return data;
+}
+export async function packStatus() {
+  try {
+    const p = await pointer();
+    if (!p) return { ready: false, bytes: 0, error: "" };
+    const cache = await caches.open(p);
+    for (const file of MODEL_FILES) await verified(cache, file.name);
+    return {
+      ready: true,
+      bytes: MODEL_FILES.reduce((n, f) => n + f.bytes, 0),
+      error: "",
+    };
+  } catch (e) {
+    return {
+      ready: false,
+      bytes: 0,
+      error: e instanceof Error ? e.message : "Pack unavailable",
+    };
+  }
+}
+async function fetchBounded(url: string, limit: number, signal: AbortSignal) {
+  const response = await fetch(url, {
+    signal,
+    cache: "no-store",
+    referrerPolicy: "no-referrer",
+  });
+  if (!response.ok || !response.body)
+    throw new Error(`Asset download failed (${response.status}).`);
+  const reader = response.body.getReader(),
+    chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > limit) {
+        await reader.cancel();
+        throw new Error("Asset exceeded its pinned size.");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const result = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+export async function downloadPack(
+  signal: AbortSignal,
+  onProgress: (done: number, total: number) => void = () => {},
+) {
+  const execute = () =>
+    runActivity(async () => {
+      if ((await packStatus()).ready) return;
+      const cacheName = "neuron-pack-" + crypto.randomUUID(),
+        cache = await caches.open(cacheName);
+      let committed = false,
+        done = 0;
+      const total = MODEL_FILES.reduce((n, f) => n + f.bytes, 0);
+      try {
+        for (const file of MODEL_FILES) {
+          signal.throwIfAborted();
+          const bytes = await fetchBounded(
+            source + file.name + "?tfjs-format=file",
+            file.bytes,
+            signal,
+          );
+          if (
+            bytes.length !== file.bytes ||
+            (await sha256(bytes)) !== file.hash
+          )
+            throw new Error(
+              "Downloaded encoder differs from the pinned version. No unverified weights were installed.",
+            );
+          await cache.put(key(file.name), new Response(bytes as BodyInit));
+          done += file.bytes;
+          onProgress(done, total);
+        }
+        signal.throwIfAborted();
+        await verified(cache, "model.json");
+        validateEncoderManifest(
+          JSON.parse(
+            new TextDecoder().decode(await verified(cache, "model.json")),
+          ),
+        );
+        await (
+          await caches.open(INDEX_CACHE)
+        ).put(
+          INDEX_URL,
+          new Response(JSON.stringify({ id: PACK_ID, cache: cacheName })),
+        );
+        committed = true;
+      } finally {
+        if (!committed) await caches.delete(cacheName);
+      }
+    });
+  if (navigator.locks)
+    return navigator.locks.request(
+      "neuron-assets",
+      { mode: "exclusive" },
+      execute,
+    );
+  return execute();
+}
+export async function removePack() {
+  const remove = async () => {
+    await (await caches.open(INDEX_CACHE)).delete(INDEX_URL);
+    for (const name of await caches.keys())
+      if (name.startsWith("neuron-pack-")) await caches.delete(name);
+  };
+  if (navigator.locks)
+    return navigator.locks.request("neuron-assets", { mode: "exclusive" }, () =>
+      runActivity(remove),
+    );
+  return runActivity(remove);
+}
+export async function encoderArtifacts(): Promise<io.ModelArtifacts> {
+  if (!(await packStatus()).ready) {
+    if (!navigator.onLine)
+      throw new Error(
+        "No verified image encoder is cached. Reconnect and download it in Settings.",
+      );
+    await downloadPack(new AbortController().signal);
+  }
+  const name = await pointer();
+  if (!name) throw new Error("Encoder pack was removed. Retry to reinstall.");
+  const cache = await caches.open(name);
+  const model = validateEncoderManifest(
+    JSON.parse(new TextDecoder().decode(await verified(cache, "model.json"))),
+  );
+  const parts = await Promise.all(
+    MODEL_FILES.slice(1).map((f) => verified(cache, f.name)),
+  );
+  const data = new Uint8Array(parts.reduce((n, p) => n + p.byteLength, 0));
+  let offset = 0;
+  for (const p of parts) {
+    data.set(new Uint8Array(p), offset);
+    offset += p.byteLength;
+  }
+  return {
+    modelTopology: model.modelTopology!,
+    weightSpecs: model.weightsManifest![0].weights,
+    weightData: data.buffer,
+    signature: model.signature,
+    userDefinedMetadata: model.userDefinedMetadata,
+  };
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pwa/asset-manager.ts =====
+
+===== BEGIN FILE 11/40: apps/web/src/lib/ml.ts =====
+SHA256: 1ed0576f7d98e27e74b20d9a5016005dcd57583caabbc9db81a853bbd2d8d51e
+----- CONTENT START -----
+import * as tf from "@tensorflow/tfjs";
+import * as mobilenet from "@tensorflow-models/mobilenet";
+import { encoderArtifacts } from "../pwa/asset-manager";
+import { decodeImage } from "../features/datasets/dataset.service";
+let encoderPromise: Promise<mobilenet.MobileNet> | undefined;
+let initPromise: Promise<void> | undefined;
+export async function initializeRuntime() {
+  return (initPromise ??= (async () => {
+    try {
+      if (!(await tf.setBackend("webgl"))) throw new Error("WebGL unavailable");
+      await tf.ready();
+    } catch {
+      await tf.setBackend("cpu");
+      await tf.ready();
+    }
+  })());
+}
+export async function encoder() {
+  await initializeRuntime();
+  if (!encoderPromise)
+    encoderPromise = mobilenet
+      .load({
+        version: 2,
+        alpha: 1.0,
+        inputRange: [0, 1],
+        modelUrl: { load: encoderArtifacts },
+      })
+      .catch((e) => {
+        encoderPromise = undefined;
+        throw new Error(
+          `Encoder unavailable. Check Settings → Offline readiness, then retry. ${e instanceof Error ? e.message : ""}`,
+        );
+      });
+  return encoderPromise;
+}
+export async function embed(blob: Blob) {
+  const net = await encoder();
+  const bitmap = await decodeImage(blob);
+  try {
+    // mobilenet's published input union omits ImageBitmap; use a bounded canvas.
+    const canvas = document.createElement("canvas");
+    canvas.width = 224;
+    canvas.height = 224;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas unavailable.");
+    ctx.drawImage(bitmap, 0, 0, 224, 224);
+    const t = net.infer(canvas, true) as tf.Tensor;
+    try {
+      return Float32Array.from(await t.data());
+    } finally {
+      t.dispose();
+    }
+  } finally {
+    bitmap.close();
+  }
+}
+export function makeHead(classes: number, seed: number) {
+  const model = tf.sequential();
+  model.add(
+    tf.layers.dense({
+      inputShape: [1280],
+      units: classes,
+      activation: "softmax",
+      kernelInitializer: tf.initializers.glorotUniform({ seed }),
+      biasInitializer: "zeros",
+    }),
+  );
+  return model;
+}
+export function backendName() {
+  return tf.getBackend() || "not initialized";
+}
+export { tf };
+----- CONTENT END -----
+===== END FILE: apps/web/src/lib/ml.ts =====
+
+===== BEGIN FILE 12/40: apps/web/src/lib/download.ts =====
+SHA256: b8bb612ef30d8c55b3db4531e22d002f02dac73b90f6f6ac9c0f763278df158b
+----- CONTENT START -----
+export function downloadBlob(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+export function safeFilename(name: string) {
+  return name.replace(/[^a-z0-9_-]/gi, "_").slice(0, 64) || "neuron-project";
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/lib/download.ts =====
+
+===== BEGIN FILE 13/40: apps/web/src/lib/backup-format.ts =====
+SHA256: aa3a18d31302ab8261a481ab776dd50e045d03a7f244063824c624fff920e3c0
+----- CONTENT START -----
+import type { Project, Sample, ModelVersion, FeedbackItem } from "./types";
+import { uid } from "./types";
+import { sha256, validHash } from "./checksums";
+import { toBase64, fromBase64, validateArtifact } from "./model-format";
+export const BACKUP_LIMIT = 64 * 1024 * 1024;
+const MEDIA_LIMIT = 32 * 1024 * 1024;
+type Media = {
+  id: string;
+  labelId: string;
+  data: string;
+  hash: string;
+  createdAt: number;
+  versionId?: string;
+  predictedLabel?: string;
+};
+export type Backup = {
+  format: "neuron-project";
+  version: 1;
+  project: Project;
+  samples: Media[];
+  versions: ModelVersion[];
+  feedback: Media[];
+  createdAt: number;
+};
+export type Snapshot = {
+  project: Project;
+  samples: Sample[];
+  versions: ModelVersion[];
+  feedback: FeedbackItem[];
+};
+function text(x: unknown, max = 100): x is string {
+  return typeof x === "string" && x.trim().length > 0 && x.length <= max;
+}
+export function validateBackupShape(value: unknown): Backup {
+  const b = value as Backup;
+  if (
+    !b ||
+    b.format !== "neuron-project" ||
+    b.version !== 1 ||
+    !b.project ||
+    !text(b.project.id) ||
+    !text(b.project.name, 64) ||
+    !Array.isArray(b.project.labels) ||
+    b.project.labels.length < 2 ||
+    b.project.labels.length > 20
+  )
+    throw new Error("Unsupported NEURON project backup.");
+  const labelIds = new Set<string>(),
+    names = new Set<string>();
+  for (const l of b.project.labels) {
+    if (
+      !l ||
+      !text(l.id) ||
+      !text(l.name, 64) ||
+      labelIds.has(l.id) ||
+      names.has(l.name.toLowerCase())
+    )
+      throw new Error("Invalid backup classes.");
+    labelIds.add(l.id);
+    names.add(l.name.toLowerCase());
+  }
+  if (
+    ![b.project.createdAt, b.project.updatedAt, b.createdAt].every(
+      Number.isFinite,
+    ) ||
+    !Array.isArray(b.samples) ||
+    b.samples.length > 1000 ||
+    !Array.isArray(b.versions) ||
+    b.versions.length > 50 ||
+    !Array.isArray(b.feedback) ||
+    b.feedback.length > 100
+  )
+    throw new Error("Backup exceeds supported record limits.");
+  const versionIds = new Set<string>();
+  for (const v of b.versions) {
+    if (
+      !v ||
+      !text(v.id) ||
+      versionIds.has(v.id) ||
+      v.projectId !== b.project.id ||
+      !Number.isFinite(v.createdAt)
+    )
+      throw new Error("Invalid model version.");
+    versionIds.add(v.id);
+    validateArtifact(v.artifact);
+  }
+  if (b.project.activeVersionId && !versionIds.has(b.project.activeVersionId))
+    throw new Error("Active model is missing from backup.");
+  const allIds = new Set<string>();
+  let chars = 0;
+  for (const [list, feedback] of [
+    [b.samples, false],
+    [b.feedback, true],
+  ] as const)
+    for (const m of list) {
+      if (
+        !m ||
+        !text(m.id) ||
+        allIds.has(m.id) ||
+        !labelIds.has(m.labelId) ||
+        !Number.isFinite(m.createdAt) ||
+        !validHash(m.hash) ||
+        typeof m.data !== "string" ||
+        m.data.length > 2 * 1024 * 1024 ||
+        !/^[A-Za-z0-9+/]*={0,2}$/.test(m.data)
+      )
+        throw new Error("Invalid image record in backup.");
+      if (
+        feedback &&
+        (!text(m.versionId) ||
+          !versionIds.has(m.versionId!) ||
+          typeof m.predictedLabel !== "string" ||
+          m.predictedLabel.length > 64)
+      )
+        throw new Error("Invalid feedback record.");
+      allIds.add(m.id);
+      chars += m.data.length;
+    }
+  if (chars > Math.ceil((MEDIA_LIMIT * 4) / 3) + 4096)
+    throw new Error("Backup images exceed the 32 MB media budget.");
+  return b;
+}
+export async function encodeBackup(snapshot: Snapshot): Promise<Blob> {
+  let bytes = 0;
+  async function encode(s: Sample | FeedbackItem): Promise<Media> {
+    bytes += s.blob.size;
+    if (bytes > MEDIA_LIMIT)
+      throw new Error(
+        "This phase supports at most 32 MB of image/feedback data per backup.",
+      );
+    return {
+      id: s.id,
+      labelId: s.labelId,
+      createdAt: s.createdAt,
+      data: toBase64(await s.blob.arrayBuffer()),
+      hash: await sha256(s.blob),
+      ...("versionId" in s
+        ? { versionId: s.versionId, predictedLabel: s.predictedLabel }
+        : {}),
+    };
+  }
+  const samples: Media[] = [],
+    feedback: Media[] = [];
+  for (const s of snapshot.samples) samples.push(await encode(s));
+  for (const f of snapshot.feedback) feedback.push(await encode(f));
+  const b: Backup = {
+    format: "neuron-project",
+    version: 1,
+    project: snapshot.project,
+    samples,
+    feedback,
+    versions: snapshot.versions,
+    createdAt: Date.now(),
+  };
+  validateBackupShape(b);
+  const blob = new Blob([JSON.stringify(b)], { type: "application/json" });
+  if (blob.size > BACKUP_LIMIT)
+    throw new Error("Backup exceeds the 64 MB file limit.");
+  return blob;
+}
+export async function decodeBackup(file: Blob): Promise<Snapshot> {
+  if (file.size > BACKUP_LIMIT)
+    throw new Error("Backup exceeds the 64 MB file limit.");
+  let raw: unknown;
+  try {
+    raw = JSON.parse(await file.text());
+  } catch {
+    throw new Error("Backup is not valid JSON.");
+  }
+  const b = validateBackupShape(raw),
+    projectId = uid(),
+    versionMap = new Map(b.versions.map((v) => [v.id, uid()]));
+  async function media(m: Media) {
+    const data = fromBase64(m.data);
+    if ((await sha256(data)) !== m.hash)
+      throw new Error("Backup image checksum mismatch. No data was restored.");
+    const bytes = new Uint8Array(data);
+    if (
+      bytes.length < 4 ||
+      bytes[0] !== 255 ||
+      bytes[1] !== 216 ||
+      bytes[2] !== 255
+    )
+      throw new Error("Only normalized JPEG images are supported in backups.");
+    return new Blob([data], { type: "image/jpeg" });
+  }
+  const samples: Sample[] = [],
+    feedback: FeedbackItem[] = [];
+  for (const m of b.samples)
+    samples.push({
+      id: uid(),
+      projectId,
+      labelId: m.labelId,
+      createdAt: m.createdAt,
+      blob: await media(m),
+      hash: m.hash,
+    });
+  for (const m of b.feedback)
+    feedback.push({
+      id: uid(),
+      projectId,
+      labelId: m.labelId,
+      createdAt: m.createdAt,
+      blob: await media(m),
+      versionId: versionMap.get(m.versionId!)!,
+      predictedLabel: m.predictedLabel!,
+    });
+  const project: Project = {
+    id: projectId,
+    name: (b.project.name.slice(0, 52) + " (restored)").slice(0, 64),
+    labels: b.project.labels,
+    createdAt: b.project.createdAt,
+    updatedAt: Date.now(),
+    activeVersionId: b.project.activeVersionId
+      ? versionMap.get(b.project.activeVersionId)
+      : undefined,
+  };
+  return {
+    project,
+    samples,
+    feedback,
+    versions: b.versions.map((v) => ({
+      id: versionMap.get(v.id)!,
+      projectId,
+      createdAt: v.createdAt,
+      artifact: validateArtifact(v.artifact),
+    })),
+  };
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/lib/backup-format.ts =====
+
+===== BEGIN FILE 14/40: apps/web/src/features/settings/BackupPanel.tsx =====
+SHA256: 0c85050f6db0b129f61f3591b5e543067b593aa569a919f317404fb2e2b3436e
+----- CONTENT START -----
+import { trackTransaction } from "../../lib/db";
+import { useEffect, useRef, useState } from "react";
+import { listProjects, snapshotProject, database } from "../../lib/db";
+import { encodeBackup, decodeBackup } from "../../lib/backup-format";
+import { downloadBlob, safeFilename } from "../../lib/download";
+import { runActivity } from "../../pwa/update-manager";
+import { type Project, errorMessage } from "../../lib/types";
+import { Button } from "../../components/ui/Button";
+export async function restoreProject(file: Blob) {
+  const snapshot = await decodeBackup(file);
+  // Decode images before transaction; never keep IDB transactions alive across canvas work.
+  for (const s of [...snapshot.samples, ...snapshot.feedback]) {
+    const bitmap = await createImageBitmap(s.blob);
+    try {
+      if (bitmap.width > 768 || bitmap.height > 768)
+        throw new Error("Backup image exceeds normalized dimensions.");
+    } finally {
+      bitmap.close();
+    }
+  }
+  const db = await database(),
+    tx = trackTransaction(
+      db.transaction(
+        ["projects", "samples", "versions", "feedback"],
+        "readwrite",
+      ),
+    );
+  await tx.objectStore("projects").add(snapshot.project);
+  for (const s of snapshot.samples) await tx.objectStore("samples").add(s);
+  for (const v of snapshot.versions) await tx.objectStore("versions").add(v);
+  for (const f of snapshot.feedback) await tx.objectStore("feedback").add(f);
+  await tx.done;
+  return snapshot.project;
+}
+export function BackupPanel() {
+  const [projects, setProjects] = useState<Project[]>([]),
+    [selected, setSelected] = useState(""),
+    [consent, setConsent] = useState(false),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(""),
+    [message, setMessage] = useState("");
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    listProjects()
+      .then((p) => {
+        setProjects(p);
+        setSelected(p[0]?.id ?? "");
+      })
+      .catch((e) => setError(errorMessage(e)));
+  }, []);
+  async function task(fn: () => Promise<void>) {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await runActivity(fn);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="panel">
+      <h2>Full project backups</h2>
+      <p>
+        Includes your normalized images, feedback, class names and all model
+        versions. This is a sensitive, unencrypted local file. Keep it somewhere
+        private.
+      </p>
+      <label className="field">
+        Project
+        <select
+          value={selected}
+          disabled={busy}
+          onChange={(e) => setSelected(e.target.value)}
+        >
+          {projects.map((p) => (
+            <option value={p.id} key={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="check-label">
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+        />{" "}
+        I understand this backup contains my images and is not encrypted.
+      </label>
+      <div className="inline wrap">
+        <Button
+          variant="secondary"
+          disabled={busy || !selected || !consent}
+          onClick={() =>
+            void task(async () => {
+              const snapshot = await snapshotProject(selected);
+              downloadBlob(
+                await encodeBackup(snapshot),
+                safeFilename(snapshot.project.name) + ".neuron-backup.json",
+              );
+              setMessage(
+                "Backup downloaded. Keep original images separately too.",
+              );
+            })
+          }
+        >
+          Download full backup
+        </Button>
+        <Button
+          variant="secondary"
+          disabled={busy}
+          onClick={() => input.current?.click()}
+        >
+          Restore as new project
+        </Button>
+      </div>
+      <input
+        ref={input}
+        hidden
+        type="file"
+        accept=".json,application/json"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (
+            file &&
+            confirm(
+              "Restore this backup as a NEW local project? Existing projects will not be overwritten.",
+            )
+          )
+            void task(async () => {
+              const p = await restoreProject(file);
+              setProjects(await listProjects());
+              setSelected(p.id);
+              setMessage("Restored successfully. Open My projects to use it.");
+            });
+        }}
+      />
+      {busy && <p role="status">Processing backup… keep this page open.</p>}
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+      {message && (
+        <p role="status" className="success">
+          {message}
+        </p>
+      )}
+      <p className="phase-note">
+        Limits: 1,000 samples, 100 feedback items, 50 model versions, 32 MB
+        total images and 64 MB backup file. Images are checksum-checked and
+        decoded before atomic restore. No source project is overwritten.
+      </p>
+    </section>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/settings/BackupPanel.tsx =====
+
+===== BEGIN FILE 15/40: apps/web/src/features/settings/RuntimeSettings.tsx =====
+SHA256: 5e6a24446d38270af8b97654b1404705260dd001b5c41f629afcd3e517f9a9ae
+----- CONTENT START -----
+import { useEffect, useRef, useState } from "react";
+import { packStatus, downloadPack, removePack } from "../../pwa/asset-manager";
+import {
+  getRegistration,
+  offlineState,
+  subscribeOffline,
+} from "../../pwa/register";
+import { bytes } from "../../lib/capabilities";
+import { errorMessage } from "../../lib/types";
+import { Button } from "../../components/ui/Button";
+export function RuntimeSettings() {
+  const [status, setStatus] = useState({ ready: false, bytes: 0, error: "" }),
+    [busy, setBusy] = useState(false),
+    [progress, setProgress] = useState(0),
+    [error, setError] = useState(""),
+    [, render] = useState(0);
+  const control = useRef<AbortController | null>(null);
+  useEffect(() => {
+    void packStatus().then(setStatus);
+    const unsubscribe = subscribeOffline(() => render((n) => n + 1));
+    return () => {
+      unsubscribe();
+      control.current?.abort();
+    };
+  }, []);
+  async function download() {
+    setBusy(true);
+    setError("");
+    const c = new AbortController();
+    control.current = c;
+    try {
+      await downloadPack(c.signal, (done, total) => setProgress(done / total));
+      setStatus(await packStatus());
+    } catch (e) {
+      setError(
+        c.signal.aborted
+          ? "Download cancelled. No incomplete pack was installed."
+          : errorMessage(e),
+      );
+    } finally {
+      setBusy(false);
+      control.current = null;
+    }
+  }
+  return (
+    <section className="panel">
+      <h2>Offline readiness</h2>
+      <dl className="summary-list">
+        <div>
+          <dt>Application shell</dt>
+          <dd>
+            {offlineState.controlled
+              ? "Installed"
+              : import.meta.env.DEV
+                ? "Development mode"
+                : "Installing / unavailable"}
+          </dd>
+        </div>
+        <div>
+          <dt>Image encoder</dt>
+          <dd>
+            {status.ready ? `Verified · ${bytes(status.bytes)}` : "Not ready"}
+          </dd>
+        </div>
+      </dl>
+      <p>
+        Both the production app shell and verified encoder must be installed
+        before disconnecting. Storage can still be cleared or evicted by your
+        browser.
+      </p>
+      {busy ? (
+        <>
+          <progress value={progress} max={1} />
+          <Button variant="danger" onClick={() => control.current?.abort()}>
+            Cancel download
+          </Button>
+        </>
+      ) : (
+        <div className="inline wrap">
+          <Button disabled={status.ready} onClick={() => void download()}>
+            Download image encoder (~14 MB)
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={!status.ready}
+            onClick={() => {
+              if (
+                confirm(
+                  "Remove the cached encoder? Existing models and images remain, but future page sessions need another download.",
+                )
+              )
+                void removePack()
+                  .then(() => packStatus())
+                  .then(setStatus)
+                  .catch((e) => setError(errorMessage(e)));
+            }}
+          >
+            Remove encoder pack
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => void packStatus().then(setStatus)}
+          >
+            Verify pack
+          </Button>
+        </div>
+      )}
+      {(error || status.error || offlineState.error) && (
+        <p role="alert" className="error">
+          {error || status.error || offlineState.error}
+        </p>
+      )}
+      <Button
+        variant="ghost"
+        onClick={() =>
+          void getRegistration()
+            ?.update()
+            .catch((e) => setError(errorMessage(e)))
+        }
+      >
+        Check for app update
+      </Button>
+      <p className="phase-note">
+        Offline reload works in a production build only: pnpm build, then pnpm
+        --filter @neuron/web preview. Open localhost:4173, wait for shell
+        installation and download the encoder. Development Vite sessions
+        deliberately do not install a service worker.
+      </p>
+    </section>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/settings/RuntimeSettings.tsx =====
+
+===== BEGIN FILE 16/40: apps/web/src/components/layout/OfflineBanner.tsx =====
+SHA256: 03946caa714ea4d624ccc74a972ce1da42c0742e8da3623a17db7ef6c6e1fdf3
+----- CONTENT START -----
+import { useEffect, useState } from "react";
+import {
+  getRegistration,
+  offlineState,
+  subscribeOffline,
+} from "../../pwa/register";
+import { installUpdate } from "../../pwa/update-manager";
+import { errorMessage } from "../../lib/types";
+export function OfflineBanner() {
+  const [online, setOnline] = useState(navigator.onLine),
+    [, render] = useState(0),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    const unsub = subscribeOffline(() => render((n) => n + 1));
+    return () => {
+      unsub();
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+  return (
+    <>
+      {!online && (
+        <div className="notice offline-notice">
+          You are offline. Saved projects remain local. Training and predictions
+          require the verified encoder pack.{" "}
+          <a href="#/settings">Check readiness →</a>
+        </div>
+      )}
+      {offlineState.updateAvailable && (
+        <div className="notice offline-notice">
+          A new app version is ready. Save your work first.{" "}
+          <button
+            className="btn btn-secondary"
+            disabled={busy}
+            onClick={() => {
+              const r = getRegistration();
+              if (!r) return;
+              setBusy(true);
+              void installUpdate(r)
+                .catch((e) => setError(errorMessage(e)))
+                .finally(() => setBusy(false));
+            }}
+          >
+            Apply safe update
+          </button>
+        </div>
+      )}
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+    </>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/components/layout/OfflineBanner.tsx =====
+
+===== BEGIN FILE 17/40: apps/web/src/components/layout/AppShell.tsx =====
+SHA256: 7fab715edd19f2a7d2bf7395a9ed33b1291d5d34c6b069918d91eef12cd61c8d
+----- CONTENT START -----
+import { type ReactNode } from "react";
+import { OfflineBanner } from "./OfflineBanner";
+import {
+  BrainCircuit,
+  LayoutDashboard,
+  FolderOpen,
+  Settings,
+  ShieldCheck,
+  ArrowUpRight,
+} from "lucide-react";
+export function AppShell({
+  children,
+  route,
+}: {
+  children: ReactNode;
+  route: string;
+}) {
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <a className="brand" href="#/">
+          <BrainCircuit size={37} />
+          <span>
+            NEURON<small>YOUR AI. YOUR DEVICE.</small>
+          </span>
+        </a>
+        <div className="nav-label">WORKSPACE</div>
+        <nav aria-label="Main navigation">
+          {[
+            {
+              href: "#/",
+              name: "Overview",
+              icon: LayoutDashboard,
+              active: route === "/",
+            },
+            {
+              href: "#/projects",
+              name: "My projects",
+              icon: FolderOpen,
+              active: route.startsWith("/project"),
+            },
+            {
+              href: "#/settings",
+              name: "Settings & storage",
+              icon: Settings,
+              active: route === "/settings",
+            },
+          ].map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className={item.active ? "active" : ""}
+            >
+              <item.icon size={19} />
+              {item.name}
+              {item.active && <span className="nav-dot" />}
+            </a>
+          ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="privacy-note">
+            <ShieldCheck size={22} />
+            <strong>Private by design</strong>
+            <p>Your images stay on your device. No account needed.</p>
+          </div>
+          <a className="small-link" href="#/settings">
+            Manage local storage <ArrowUpRight size={14} />
+          </a>
+          <div className="build-label">NEURON / PHASE 02</div>
+        </div>
+      </aside>
+      <div className="workspace">
+        <header className="topbar">
+          <span>
+            Workspace <span className="muted">/</span>{" "}
+            <strong>
+              {route === "/"
+                ? "Overview"
+                : route === "/projects"
+                  ? "Projects"
+                  : route === "/settings"
+                    ? "Settings"
+                    : "Image studio"}
+            </strong>
+          </span>
+          <span className="local-badge">
+            <span className="status-dot" /> Local-first workspace
+          </span>
+        </header>
+        <OfflineBanner />
+        <main className="main-content">{children}</main>
+        <footer className="footer">
+          <span>Built on your ideas. Powered by your device.</span>
+          <span>BUILD · TRAIN · EVOLVE</span>
+        </footer>
+      </div>
+    </div>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/components/layout/AppShell.tsx =====
+
+===== BEGIN FILE 18/40: apps/web/src/features/datasets/dataset.service.ts =====
+SHA256: 8230d3c2f58a97ee213960d0ac1833cc14141c9de3d34ca70213b658d3cbe075
+----- CONTENT START -----
+import { trackTransaction } from "../../lib/db";
+import { database } from "../../lib/db";
+import { sha256 } from "../../lib/checksums";
+import { uid, type Sample } from "../../lib/types";
+export const MAX_SAMPLES = 1000;
+export async function decodeImage(blob: Blob): Promise<ImageBitmap> {
+  try {
+    return await createImageBitmap(blob, { imageOrientation: "from-image" });
+  } catch {
+    throw new Error(
+      "Could not decode this image. Use a valid JPEG, PNG or WebP.",
+    );
+  }
+}
+export async function normalizeImage(file: File): Promise<Blob> {
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
+    throw new Error(`${file.name}: only JPEG, PNG and WebP are supported.`);
+  if (file.size > 15 * 1024 * 1024)
+    throw new Error(`${file.name}: maximum upload size is 15 MB.`);
+  const bitmap = await decodeImage(file);
+  try {
+    if (bitmap.width * bitmap.height > 40_000_000)
+      throw new Error("Image exceeds the 40-megapixel safety limit.");
+    const scale = Math.min(1, 768 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas unavailable.");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject(new Error("Image encoding failed."))),
+        "image/jpeg",
+        0.88,
+      ),
+    );
+  } finally {
+    bitmap.close();
+  }
+}
+export async function addImages(
+  projectId: string,
+  labelId: string,
+  files: File[],
+  currentCount: number,
+  onProgress: (n: number) => void,
+) {
+  if (currentCount + files.length > MAX_SAMPLES)
+    throw new Error(
+      `This phase supports at most ${MAX_SAMPLES} samples per project.`,
+    );
+  const errors: string[] = [];
+  let saved = 0;
+  for (const file of files) {
+    try {
+      const blob = await normalizeImage(file);
+      const sample: Sample = {
+        id: uid(),
+        projectId,
+        labelId,
+        blob,
+        createdAt: Date.now(),
+      };
+      sample.hash = await sha256(blob);
+      const db = await database();
+      // Lazily hash Phase 1 samples without recreating records deleted by another tab.
+      for (const old of await db.getAllFromIndex(
+        "samples",
+        "by-project",
+        projectId,
+      )) {
+        if (old.hash) continue;
+        const hash = await sha256(old.blob);
+        const update = trackTransaction(db.transaction("samples", "readwrite"));
+        const current = await update.store.get(old.id);
+        if (current) await update.store.put({ ...current, hash });
+        await update.done;
+      }
+      const tx = trackTransaction(
+        db.transaction(["projects", "samples"], "readwrite"),
+      );
+      const project = await tx.objectStore("projects").get(projectId);
+      const current = await tx
+        .objectStore("samples")
+        .index("by-project")
+        .getAll(projectId);
+      if (
+        !project ||
+        !project.labels.some((l) => l.id === labelId) ||
+        current.length >= MAX_SAMPLES ||
+        current.some((s) => s.hash === sample.hash)
+      ) {
+        tx.abort();
+        await tx.done.catch(() => {});
+        throw new Error(
+          !project
+            ? "Project deleted."
+            : current.some((s) => s.hash === sample.hash)
+              ? "Duplicate image already exists in this project."
+              : "Class changed or project sample limit reached.",
+        );
+      }
+      await tx.objectStore("samples").add(sample);
+      await tx
+        .objectStore("projects")
+        .put({ ...project, updatedAt: Date.now() });
+      await tx.done;
+      saved++;
+    } catch (e) {
+      errors.push(
+        `${file.name}: ${e instanceof Error ? e.message : "Save failed"}`,
+      );
+      if (e instanceof DOMException && e.name === "QuotaExceededError") break;
+    }
+    onProgress(saved);
+  }
+  return { saved, errors };
+}
+export async function removeSample(id: string) {
+  await (await database()).delete("samples", id);
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/datasets/dataset.service.ts =====
+
+===== BEGIN FILE 19/40: apps/web/src/features/training/training.service.ts =====
+SHA256: 0ce641c8803e885564b151bd3bd6def9239de565acf226b95538ef145c132160
+----- CONTENT START -----
+import { tf, embed, makeHead } from "../../lib/ml";
+import { toBase64 } from "../../lib/model-format";
+import type {
+  Project,
+  Sample,
+  EpochMetric,
+  Evaluation,
+  ModelArtifact,
+} from "../../lib/types";
+import { sha256 } from "../../lib/checksums";
+import { runActivity } from "../../pwa/update-manager";
+import { validateLabels } from "../projects/project.service";
+export function random(seed: number) {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+export function splitIndices(labels: number[], seed: number) {
+  const rng = random(seed),
+    train: number[] = [],
+    validation: number[] = [];
+  for (const label of [...new Set(labels)]) {
+    const indices = labels
+      .map((v, i) => (v === label ? i : -1))
+      .filter((i) => i !== -1);
+    if (indices.length < 5)
+      throw new Error("Every class needs at least 5 images.");
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    const count = Math.max(1, Math.floor(indices.length * 0.2));
+    validation.push(...indices.slice(0, count));
+    train.push(...indices.slice(count));
+  }
+  return { train, validation };
+}
+export function evaluate(
+  actual: number[],
+  predicted: number[],
+  classes: number,
+): Evaluation {
+  if (!actual.length || actual.length !== predicted.length)
+    throw new Error("Invalid evaluation data.");
+  const matrix = Array.from({ length: classes }, () =>
+    Array<number>(classes).fill(0),
+  );
+  let correct = 0;
+  actual.forEach((a, i) => {
+    const p = predicted[i];
+    if (
+      a < 0 ||
+      a >= classes ||
+      p < 0 ||
+      p >= classes ||
+      !Number.isInteger(a) ||
+      !Number.isInteger(p)
+    )
+      throw new Error("Invalid prediction index.");
+    matrix[a][p]++;
+    if (a === p) correct++;
+  });
+  return { accuracy: correct / actual.length, matrix, total: actual.length };
+}
+export type TrainingOptions = {
+  epochs: number;
+  learningRate: number;
+  seed: number;
+};
+export type TrainingProgress = {
+  stage: string;
+  done: number;
+  total: number;
+  metrics: EpochMetric[];
+};
+async function trainInternal(
+  project: Project,
+  samples: Sample[],
+  options: TrainingOptions,
+  signal: AbortSignal,
+  progress: (p: TrainingProgress) => void,
+): Promise<ModelArtifact> {
+  validateLabels(project.labels);
+  if (
+    !Number.isInteger(options.epochs) ||
+    options.epochs < 1 ||
+    options.epochs > 100 ||
+    options.learningRate < 0.00001 ||
+    options.learningRate > 0.1 ||
+    !Number.isFinite(options.learningRate)
+  )
+    throw new Error("Invalid training settings.");
+  const ids = project.labels.map((l) => l.id);
+  const targets = samples.map((s) => ids.indexOf(s.labelId));
+  if (targets.some((i) => i < 0))
+    throw new Error("Dataset contains an unknown class.");
+  const { train: training, validation } = splitIndices(targets, options.seed);
+  const check = () => {
+    if (signal.aborted)
+      throw new DOMException("Training cancelled.", "AbortError");
+  };
+  const vectors: Float32Array[] = [];
+  const metrics: EpochMetric[] = [];
+  progress({
+    stage: "Downloading / loading image encoder",
+    done: 0,
+    total: samples.length,
+    metrics: [],
+  });
+  for (let i = 0; i < samples.length; i++) {
+    check();
+    vectors.push(await embed(samples[i].blob));
+    progress({
+      stage: "Extracting image features",
+      done: i + 1,
+      total: samples.length,
+      metrics: [],
+    });
+    await tf.nextFrame();
+  }
+  check();
+  const makeX = (indices: number[]) =>
+    tf.tensor2d(
+      indices.map((i) => Array.from(vectors[i])),
+      [indices.length, 1280],
+    );
+  const makeY = (indices: number[]) =>
+    tf.tidy(() =>
+      tf.oneHot(
+        tf.tensor1d(
+          indices.map((i) => targets[i]),
+          "int32",
+        ),
+        ids.length,
+      ),
+    );
+  let x: ReturnType<typeof makeX> | undefined,
+    y: tf.Tensor | undefined,
+    vx: ReturnType<typeof makeX> | undefined,
+    vy: tf.Tensor | undefined;
+  const head = makeHead(ids.length, options.seed);
+  const optimizer = tf.train.adam(options.learningRate);
+  try {
+    x = makeX(training);
+    y = makeY(training);
+    vx = makeX(validation);
+    vy = makeY(validation);
+    head.compile({
+      optimizer,
+      loss: "categoricalCrossentropy",
+      metrics: ["accuracy"],
+    });
+    await head.fit(x, y, {
+      epochs: options.epochs,
+      batchSize: Math.min(16, training.length),
+      shuffle: true,
+      validationData: [vx, vy],
+      callbacks: {
+        onBatchEnd: async () => {
+          if (signal.aborted) head.stopTraining = true;
+          await tf.nextFrame();
+        },
+        onEpochEnd: async (epoch, logs) => {
+          const metric: EpochMetric = {
+            epoch: epoch + 1,
+            loss: Number(logs?.loss ?? 0),
+            accuracy: Number(logs?.acc ?? logs?.accuracy ?? 0),
+            valLoss: Number(logs?.val_loss ?? 0),
+            valAccuracy: Number(logs?.val_acc ?? logs?.val_accuracy ?? 0),
+          };
+          if (!Object.values(metric).every(Number.isFinite)) {
+            head.stopTraining = true;
+            throw new Error("Training diverged. Reduce learning rate.");
+          }
+          metrics.push(metric);
+          progress({
+            stage: "Training classifier",
+            done: epoch + 1,
+            total: options.epochs,
+            metrics: [...metrics],
+          });
+        },
+      },
+    });
+    check();
+    const predicted = tf.tidy(() =>
+      (head.predict(vx!) as tf.Tensor).argMax(-1),
+    );
+    let indices: number[];
+    try {
+      indices = Array.from(await predicted.data());
+    } finally {
+      predicted.dispose();
+    }
+    const evaluation = evaluate(
+      validation.map((i) => targets[i]),
+      indices,
+      ids.length,
+    );
+    // getWeights() references model-owned variables. encode before head disposal.
+    const weights = head.getWeights();
+    const named: tf.NamedTensorMap = {};
+    weights.forEach((w, i) => (named[`head_${i}`] = w));
+    const encoded = await tf.io.encodeWeights(named);
+    check();
+    const rows = await Promise.all(
+      samples.map(async (s) => ({
+        hash: await sha256(s.blob),
+        labelId: s.labelId,
+      })),
+    );
+    const provenance = {
+      datasetHash: await sha256(
+        JSON.stringify({
+          labels: project.labels,
+          rows: [...rows].sort((a, b) =>
+            (a.hash + a.labelId).localeCompare(b.hash + b.labelId),
+          ),
+        }),
+      ),
+      validationHash: await sha256(
+        JSON.stringify({
+          labels: project.labels,
+          rows: validation
+            .map((i) => rows[i])
+            .sort((a, b) =>
+              (a.hash + a.labelId).localeCompare(b.hash + b.labelId),
+            ),
+        }),
+      ),
+      seed: options.seed,
+      sampleCount: samples.length,
+    };
+    return {
+      provenance,
+      format: "neuron-image",
+      version: 1,
+      encoder: "mobilenet-v2-1.0",
+      embeddingSize: 1280,
+      labels: structuredClone(project.labels),
+      weightSpecs: encoded.specs as ModelArtifact["weightSpecs"],
+      weightData: toBase64(encoded.data),
+      epochs: metrics,
+      evaluation,
+      createdAt: Date.now(),
+    };
+  } finally {
+    x?.dispose();
+    y?.dispose();
+    vx?.dispose();
+    vy?.dispose();
+    head.dispose();
+    optimizer.dispose();
+  }
+}
+
+export function train(...args: Parameters<typeof trainInternal>) {
+  return runActivity(() => trainInternal(...args));
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/training/training.service.ts =====
+
+===== BEGIN FILE 20/40: apps/web/src/lib/model-format.ts =====
+SHA256: 5c6825156ac4e13bbe00f458bb6c66ddf3e4a9141021685aa4401b3aa5519e7e
+----- CONTENT START -----
+import type { ModelArtifact } from "./types";
+export const MAX_MODEL_BYTES = 8 * 1024 * 1024;
+export function toBase64(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer);
+  let result = "";
+  for (let i = 0; i < bytes.length; i += 8192)
+    result += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return btoa(result);
+}
+export function fromBase64(s: string): ArrayBuffer {
+  const raw = atob(s);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+  return bytes.buffer;
+}
+function fail(): never {
+  throw new Error("Invalid or incompatible NEURON image model.");
+}
+export function validateArtifact(value: unknown): ModelArtifact {
+  if (!value || typeof value !== "object") return fail();
+  const a = value as ModelArtifact;
+  if (
+    a.format !== "neuron-image" ||
+    a.version !== 1 ||
+    a.encoder !== "mobilenet-v2-1.0" ||
+    a.embeddingSize !== 1280
+  )
+    return fail();
+  if (!Array.isArray(a.labels) || a.labels.length < 2 || a.labels.length > 20)
+    return fail();
+  const ids = new Set<string>(),
+    names = new Set<string>();
+  for (const l of a.labels) {
+    if (
+      !l ||
+      typeof l.id !== "string" ||
+      !l.id ||
+      l.id.length > 100 ||
+      typeof l.name !== "string" ||
+      !l.name.trim() ||
+      l.name.length > 64 ||
+      ids.has(l.id) ||
+      names.has(l.name.trim().toLowerCase())
+    )
+      return fail();
+    ids.add(l.id);
+    names.add(l.name.trim().toLowerCase());
+  }
+  const n = a.labels.length;
+  if (!Array.isArray(a.weightSpecs) || a.weightSpecs.length !== 2)
+    return fail();
+  const expected = [[1280, n], [n]];
+  for (let i = 0; i < 2; i++) {
+    const s = a.weightSpecs[i];
+    if (
+      !s ||
+      s.dtype !== "float32" ||
+      s.name !== `head_${i}` ||
+      JSON.stringify(s.shape) !== JSON.stringify(expected[i])
+    )
+      return fail();
+  }
+  if (
+    typeof a.weightData !== "string" ||
+    a.weightData.length > MAX_MODEL_BYTES ||
+    !/^[A-Za-z0-9+/]*={0,2}$/.test(a.weightData)
+  )
+    return fail();
+  let buffer: ArrayBuffer;
+  try {
+    buffer = fromBase64(a.weightData);
+  } catch {
+    return fail();
+  }
+  if (buffer.byteLength !== (1280 * n + n) * 4) return fail();
+  for (const x of new Float32Array(buffer))
+    if (!Number.isFinite(x)) return fail();
+  if (
+    !Number.isFinite(a.createdAt) ||
+    !Array.isArray(a.epochs) ||
+    a.epochs.length > 100
+  )
+    return fail();
+  for (const e of a.epochs)
+    if (
+      !e ||
+      ![e.epoch, e.loss, e.accuracy, e.valLoss, e.valAccuracy].every(
+        Number.isFinite,
+      )
+    )
+      return fail();
+  const v = a.evaluation;
+  if (
+    !v ||
+    !Number.isInteger(v.total) ||
+    v.total < 1 ||
+    v.total > 1000 ||
+    !Number.isFinite(v.accuracy) ||
+    v.accuracy < 0 ||
+    v.accuracy > 1 ||
+    !Array.isArray(v.matrix) ||
+    v.matrix.length !== n
+  )
+    return fail();
+  let total = 0,
+    correct = 0;
+  for (let i = 0; i < n; i++) {
+    const row = v.matrix[i];
+    if (!Array.isArray(row) || row.length !== n) return fail();
+    for (let j = 0; j < n; j++) {
+      const c = row[j];
+      if (!Number.isInteger(c) || c < 0) return fail();
+      total += c;
+      if (i === j) correct += c;
+    }
+  }
+  if (total !== v.total || Math.abs(correct / total - v.accuracy) > 1e-6)
+    return fail();
+  if (a.provenance) {
+    const p = a.provenance;
+    if (
+      !/^[a-f0-9]{64}$/.test(p.datasetHash) ||
+      !/^[a-f0-9]{64}$/.test(p.validationHash) ||
+      !Number.isInteger(p.seed) ||
+      !Number.isInteger(p.sampleCount) ||
+      p.sampleCount < 10 ||
+      p.sampleCount > 1000
+    )
+      return fail();
+  }
+  return structuredClone(a);
+}
+export async function readModel(file: File) {
+  if (file.size > MAX_MODEL_BYTES)
+    throw new Error("Model file exceeds the 8 MB safety limit.");
+  let value: unknown;
+  try {
+    value = JSON.parse(await file.text());
+  } catch {
+    throw new Error("This file is not valid JSON.");
+  }
+  return validateArtifact(value);
+}
+export function exportModel(artifact: ModelArtifact, name: string) {
+  const blob = new Blob([JSON.stringify(validateArtifact(artifact))], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${name.replace(/[^a-z0-9_-]/gi, "_")}.neuron.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/lib/model-format.ts =====
+
+===== BEGIN FILE 21/40: apps/web/src/features/evolution/evolution.service.ts =====
+SHA256: 18c8fa22d44eb6d6add0db082922aa22e9f329e99bd92184101b76170e0ba0c6
+----- CONTENT START -----
+import { trackTransaction } from "../../lib/db";
+import { database, activateVersion } from "../../lib/db";
+import { sha256 } from "../../lib/checksums";
+import {
+  uid,
+  type FeedbackItem,
+  type ModelVersion,
+  type Sample,
+} from "../../lib/types";
+import { runActivity } from "../../pwa/update-manager";
+export function comparable(a: ModelVersion, b: ModelVersion) {
+  return (
+    !!a.artifact.provenance?.validationHash &&
+    a.artifact.provenance.validationHash ===
+      b.artifact.provenance?.validationHash
+  );
+}
+export async function queueFeedback(
+  projectId: string,
+  versionId: string,
+  labelId: string,
+  blob: Blob,
+  predictedLabel: string,
+) {
+  if (blob.type !== "image/jpeg" || blob.size > 1024 * 1024)
+    throw new Error("Feedback must be a normalized JPEG under 1 MB.");
+  const db = await database(),
+    tx = trackTransaction(
+      db.transaction(["projects", "versions", "feedback"], "readwrite"),
+    ),
+    p = await tx.objectStore("projects").get(projectId),
+    v = await tx.objectStore("versions").get(versionId);
+  const existing = await tx
+    .objectStore("feedback")
+    .index("by-project")
+    .getAllKeys(projectId);
+  if (
+    !p ||
+    !v ||
+    v.projectId !== projectId ||
+    !p.labels.some((l) => l.id === labelId) ||
+    existing.length >= 100
+  ) {
+    tx.abort();
+    await tx.done.catch(() => {});
+    throw new Error(
+      "Class/model changed or feedback queue has reached 100 items.",
+    );
+  }
+  const item: FeedbackItem = {
+    id: uid(),
+    projectId,
+    versionId,
+    labelId,
+    blob,
+    predictedLabel: predictedLabel.slice(0, 64),
+    createdAt: Date.now(),
+  };
+  await tx.objectStore("feedback").add(item);
+  await tx.done;
+  return item;
+}
+export async function listFeedback(projectId: string) {
+  return (await database()).getAllFromIndex(
+    "feedback",
+    "by-project",
+    projectId,
+  );
+}
+export async function discardFeedback(id: string) {
+  await (await database()).delete("feedback", id);
+}
+export async function approveFeedback(id: string) {
+  return runActivity(async () => {
+    const db = await database(),
+      item = await db.get("feedback", id);
+    if (!item) throw new Error("Feedback no longer exists.");
+    const hash = await sha256(item.blob);
+    // Legacy samples can be hashed before opening the final write transaction.
+    for (const old of await db.getAllFromIndex(
+      "samples",
+      "by-project",
+      item.projectId,
+    )) {
+      if (old.hash) continue;
+      const value = await sha256(old.blob);
+      const t = trackTransaction(db.transaction("samples", "readwrite"));
+      const current = await t.store.get(old.id);
+      if (current) await t.store.put({ ...current, hash: value });
+      await t.done;
+    }
+    const tx = trackTransaction(
+      db.transaction(["projects", "samples", "feedback"], "readwrite"),
+    );
+    const live = await tx.objectStore("feedback").get(id),
+      p = await tx.objectStore("projects").get(item.projectId),
+      samples = await tx
+        .objectStore("samples")
+        .index("by-project")
+        .getAll(item.projectId);
+    if (
+      !live ||
+      !p ||
+      !p.labels.some((l) => l.id === item.labelId) ||
+      samples.length >= 1000 ||
+      samples.some((s) => s.hash === hash)
+    ) {
+      tx.abort();
+      await tx.done.catch(() => {});
+      throw new Error(
+        "Feedback changed, image already exists, or sample limit reached. Discard duplicates.",
+      );
+    }
+    const sample: Sample = {
+      id: uid(),
+      projectId: item.projectId,
+      labelId: item.labelId,
+      blob: item.blob,
+      createdAt: Date.now(),
+      hash,
+    };
+    await tx.objectStore("samples").add(sample);
+    await tx.objectStore("feedback").delete(id);
+    await tx.objectStore("projects").put({ ...p, updatedAt: Date.now() });
+    await tx.done;
+  });
+}
+export { activateVersion };
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/evolution/evolution.service.ts =====
+
+===== BEGIN FILE 22/40: apps/web/src/features/inference/FeedbackCapture.tsx =====
+SHA256: 58add39e1ccb83df2a7832f1ef3571e25e20c35177031eadf8d965f804de1650
+----- CONTENT START -----
+import { useState } from "react";
+import type { Project } from "../../lib/types";
+import { errorMessage } from "../../lib/types";
+import { queueFeedback } from "../evolution/evolution.service";
+import { Button } from "../../components/ui/Button";
+export function FeedbackCapture({
+  project,
+  versionId,
+  blob,
+  predictedLabel,
+}: {
+  project: Project;
+  versionId: string;
+  blob: Blob;
+  predictedLabel: string;
+}) {
+  const [label, setLabel] = useState(project.labels[0]?.id ?? ""),
+    [consent, setConsent] = useState(false),
+    [busy, setBusy] = useState(false),
+    [message, setMessage] = useState("");
+  return (
+    <section className="feedback-capture">
+      <h3>Teach it from this prediction</h3>
+      <p>
+        Choose the correct class. With your permission, save this image to a
+        local review queue. No automatic retraining or uploads.
+      </p>
+      <label className="field">
+        Correct class
+        <select value={label} onChange={(e) => setLabel(e.target.value)}>
+          {project.labels.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="check-label">
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+        />{" "}
+        Save this image locally for review.
+      </label>
+      <Button
+        variant="secondary"
+        disabled={!consent || busy}
+        onClick={() => {
+          setBusy(true);
+          void queueFeedback(project.id, versionId, label, blob, predictedLabel)
+            .then(() => {
+              setMessage("Saved to the review queue.");
+              setConsent(false);
+            })
+            .catch((e) => setMessage(errorMessage(e)))
+            .finally(() => setBusy(false));
+        }}
+      >
+        Add to review queue
+      </Button>
+      <p role="status">{message}</p>
+      <a className="small-link" href={`#/projects/${project.id}/evolve`}>
+        Review feedback & model history →
+      </a>
+    </section>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/inference/FeedbackCapture.tsx =====
+
+===== BEGIN FILE 23/40: apps/web/src/features/evolution/FeedbackQueue.tsx =====
+SHA256: 88913fa6fa807868a6d9b90c5d5e5e3c86d9f37cd033cedd9dcabbdb3fe8f553
+----- CONTENT START -----
+import { useEffect, useState } from "react";
+import {
+  approveFeedback,
+  discardFeedback,
+  listFeedback,
+} from "./evolution.service";
+import { type FeedbackItem, type Project, errorMessage } from "../../lib/types";
+import { Button } from "../../components/ui/Button";
+function ReviewImage({ blob }: { blob: Blob }) {
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    const u = URL.createObjectURL(blob);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [blob]);
+  return (
+    <img
+      className="review-image"
+      src={url}
+      alt="Feedback image awaiting approval"
+    />
+  );
+}
+export function FeedbackQueue({ project }: { project: Project }) {
+  const [items, setItems] = useState<FeedbackItem[]>([]),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false),
+    [message, setMessage] = useState("");
+  async function refresh() {
+    setItems(await listFeedback(project.id));
+  }
+  useEffect(() => {
+    void refresh().catch((e) => setError(errorMessage(e)));
+  }, [project.id]);
+  async function task(action: () => Promise<unknown>) {
+    setBusy(true);
+    setError("");
+    try {
+      await action();
+      await refresh();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="panel">
+      <h2>Review queue · {items.length}/100</h2>
+      <p>
+        Approve adds an image to its chosen training class. Your saved model
+        does not change until you retrain and activate a new version.
+      </p>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      {message && <p role="status">{message}</p>}
+      {!items.length ? (
+        <p className="muted">
+          No pending feedback. Add a prediction image from the Predict page.
+        </p>
+      ) : (
+        <div className="review-grid">
+          {items.map((item) => (
+            <article key={item.id}>
+              <ReviewImage blob={item.blob} />
+              <strong>
+                {project.labels.find((l) => l.id === item.labelId)?.name ??
+                  "Class removed"}
+              </strong>
+              <p>Predicted: {item.predictedLabel}</p>
+              <div className="inline">
+                <Button
+                  disabled={busy}
+                  onClick={() =>
+                    void task(async () => {
+                      await approveFeedback(item.id);
+                      setMessage("Added to the dataset. Retrain when ready.");
+                    })
+                  }
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => void task(() => discardFeedback(item.id))}
+                >
+                  Discard
+                </Button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+      <a className="btn btn-secondary" href={`#/projects/${project.id}/train`}>
+        Retrain with approved examples
+      </a>
+    </section>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/evolution/FeedbackQueue.tsx =====
+
+===== BEGIN FILE 24/40: apps/web/src/features/evolution/ComparisonPanel.tsx =====
+SHA256: 979e20772dee13d48d928c8df91a7e682e60482c68988d3d9bfcd2adf6872032
+----- CONTENT START -----
+import { useState } from "react";
+import type { ModelVersion } from "../../lib/types";
+import { comparable } from "./evolution.service";
+export function ComparisonPanel({ versions }: { versions: ModelVersion[] }) {
+  const [left, setLeft] = useState(versions[0]?.id ?? ""),
+    [right, setRight] = useState(versions[1]?.id ?? versions[0]?.id ?? "");
+  const a = versions.find((v) => v.id === left),
+    b = versions.find((v) => v.id === right);
+  if (!a || !b)
+    return (
+      <section className="panel">
+        <h2>Version comparison</h2>
+        <p>Train and save a model to begin comparing versions.</p>
+      </section>
+    );
+  return (
+    <section className="panel">
+      <h2>Version comparison</h2>
+      <div className="comparison-selects">
+        {[
+          { name: "Version A", value: left, set: setLeft },
+          { name: "Version B", value: right, set: setRight },
+        ].map((field) => (
+          <label className="field" key={field.name}>
+            {field.name}
+            <select
+              value={field.value}
+              onChange={(e) => field.set(e.target.value)}
+            >
+              {versions.map((v, i) => (
+                <option key={v.id} value={v.id}>
+                  Version {versions.length - i} ·{" "}
+                  {new Date(v.createdAt).toLocaleString()}
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
+      </div>
+      <div className="metric-grid">
+        <div>
+          <small>Version A validation</small>
+          <strong>{(a.artifact.evaluation.accuracy * 100).toFixed(1)}%</strong>
+          <small>{a.artifact.evaluation.total} held-out images</small>
+        </div>
+        <div>
+          <small>Version B validation</small>
+          <strong>{(b.artifact.evaluation.accuracy * 100).toFixed(1)}%</strong>
+          <small>{b.artifact.evaluation.total} held-out images</small>
+        </div>
+      </div>
+      {comparable(a, b) ? (
+        <p className="success">
+          Same held-out image hashes and label vocabulary. These validation
+          scores share an evaluation set; they are still not an independent
+          test.
+        </p>
+      ) : (
+        <p className="notice">
+          These versions do not have the same verified validation-set
+          fingerprint (or use Phase 1 artifacts). Their accuracy difference is
+          not a reliable improvement measurement. Compare on a common
+          independent test set before making claims.
+        </p>
+      )}
+    </section>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/evolution/ComparisonPanel.tsx =====
+
+===== BEGIN FILE 25/40: apps/web/src/features/evolution/VersionHistory.tsx =====
+SHA256: 733abd9ab4af6362c1e601e458f2531aef5ac543dd676dfcb537fe85b3226267
+----- CONTENT START -----
+import { useState } from "react";
+import { activateVersion } from "./evolution.service";
+import { type ModelVersion, errorMessage } from "../../lib/types";
+import { Button } from "../../components/ui/Button";
+import { exportModel } from "../../lib/model-format";
+export function VersionHistory({
+  versions,
+  activeId,
+  projectId,
+  onActivate,
+}: {
+  versions: ModelVersion[];
+  activeId?: string;
+  projectId: string;
+  onActivate: (id: string) => void;
+}) {
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  return (
+    <section className="panel">
+      <h2>Saved model history</h2>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Created</th>
+              <th>Validation</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {versions.map((v, i) => (
+              <tr key={v.id}>
+                <th scope="row">
+                  {versions.length - i}
+                  {v.id === activeId ? " · Active" : ""}
+                </th>
+                <td>{new Date(v.createdAt).toLocaleString()}</td>
+                <td>
+                  {(v.artifact.evaluation.accuracy * 100).toFixed(1)}% /{" "}
+                  {v.artifact.evaluation.total} images
+                </td>
+                <td>
+                  <div className="inline wrap">
+                    <Button
+                      variant="secondary"
+                      disabled={busy || v.id === activeId}
+                      onClick={() => {
+                        setBusy(true);
+                        void activateVersion(projectId, v.id)
+                          .then(() => onActivate(v.id))
+                          .catch((e) => setError(errorMessage(e)))
+                          .finally(() => setBusy(false));
+                      }}
+                    >
+                      Activate / roll back
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        try {
+                          exportModel(
+                            v.artifact,
+                            "neuron-v" + (versions.length - i),
+                          );
+                        } catch (e) {
+                          setError(errorMessage(e));
+                        }
+                      }}
+                    >
+                      Export
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {!versions.length && <p className="muted">No versions saved yet.</p>}
+    </section>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/evolution/VersionHistory.tsx =====
+
+===== BEGIN FILE 26/40: apps/web/src/pages/EvolutionPage.tsx =====
+SHA256: ae2c1c93203465c9e2554b1f86f169e20f5d71e0ebc7f2023ddc6e1c41836c63
+----- CONTENT START -----
+import { useEffect, useState } from "react";
+import { getProject, listVersions } from "../lib/db";
+import { type Project, type ModelVersion, errorMessage } from "../lib/types";
+import { FeedbackQueue } from "../features/evolution/FeedbackQueue";
+import { VersionHistory } from "../features/evolution/VersionHistory";
+import { ComparisonPanel } from "../features/evolution/ComparisonPanel";
+export function EvolutionPage({ id }: { id: string }) {
+  const [project, setProject] = useState<Project | null>(null),
+    [versions, setVersions] = useState<ModelVersion[]>([]),
+    [error, setError] = useState("");
+  useEffect(() => {
+    let alive = true;
+    Promise.all([getProject(id), listVersions(id)])
+      .then(([p, v]) => {
+        if (alive) {
+          setProject(p ?? null);
+          setVersions(v);
+          if (!p) setError("Project not found.");
+        }
+      })
+      .catch((e) => {
+        if (alive) setError(errorMessage(e));
+      });
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+  return (
+    <>
+      <a className="back-link" href={`#/projects/${id}`}>
+        ← Dataset
+      </a>
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">04 / EVOLVE WITH YOUR PERMISSION</div>
+          <h1>Keep learning. Stay in control.</h1>
+          <p>
+            Review examples, retrain explicitly, and choose which model to
+            activate.
+          </p>
+        </div>
+        <a className="btn btn-secondary" href={`#/projects/${id}/predict`}>
+          Make predictions
+        </a>
+      </div>
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+      {project && (
+        <div className="evolution-stack">
+          <FeedbackQueue project={project} />
+          <ComparisonPanel versions={versions} />
+          <VersionHistory
+            versions={versions}
+            activeId={project.activeVersionId}
+            projectId={id}
+            onActivate={(activeVersionId) =>
+              setProject({ ...project, activeVersionId })
+            }
+          />
+        </div>
+      )}
+    </>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pages/EvolutionPage.tsx =====
+
+===== BEGIN FILE 27/40: apps/web/src/app/App.tsx =====
+SHA256: d3222a2c2a4d41bf5c7b3e50e0c7e0e0b7eff7318f011b4897dfdd3bfa6e2dcf
+----- CONTENT START -----
+import { useEffect, useState, lazy, Suspense } from "react";
+import { AppShell } from "../components/layout/AppShell";
+import { HomePage } from "../pages/HomePage";
+import { ProjectsPage } from "../pages/ProjectsPage";
+import { ProjectPage } from "../pages/ProjectPage";
+const TrainingPage = lazy(() =>
+  import("../pages/TrainingPage").then((m) => ({ default: m.TrainingPage })),
+);
+const PredictPage = lazy(() =>
+  import("../pages/PredictPage").then((m) => ({ default: m.PredictPage })),
+);
+import { SettingsPage } from "../pages/SettingsPage";
+import { NotFoundPage } from "../pages/NotFoundPage";
+const EvolutionPage = lazy(() =>
+  import("../pages/EvolutionPage").then((m) => ({ default: m.EvolutionPage })),
+);
+function currentRoute() {
+  return location.hash.slice(1) || "/";
+}
+export function App() {
+  const [route, setRoute] = useState(currentRoute);
+  useEffect(() => {
+    const update = () => {
+      setRoute(currentRoute());
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("hashchange", update);
+    return () => window.removeEventListener("hashchange", update);
+  }, []);
+  const match = route.match(
+    /^\/projects\/([^/]+)(?:\/(train|predict|evolve))?$/,
+  );
+  let page;
+  if (route === "/") page = <HomePage />;
+  else if (route === "/projects") page = <ProjectsPage />;
+  else if (route === "/settings") page = <SettingsPage />;
+  else if (match) {
+    const id = match[1];
+    page =
+      match[2] === "evolve" ? (
+        <EvolutionPage key={route} id={id} />
+      ) : match[2] === "train" ? (
+        <TrainingPage key={route} id={id} />
+      ) : match[2] === "predict" ? (
+        <PredictPage key={route} id={id} />
+      ) : (
+        <ProjectPage key={route} id={id} />
+      );
+  } else page = <NotFoundPage />;
+  return (
+    <AppShell route={route}>
+      <Suspense fallback={<p role="status">Loading image studio…</p>}>
+        {page}
+      </Suspense>
+    </AppShell>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/app/App.tsx =====
+
+===== BEGIN FILE 28/40: apps/web/src/pages/PredictPage.tsx =====
+SHA256: 09fa7fe7e375c89cc333b83f194d3eac48c47a9d7d73091b296028eda79f788f
+----- CONTENT START -----
+import { useEffect, useRef, useState } from "react";
+import { Camera, Download, Image, RefreshCw } from "lucide-react";
+import { getProject, listVersions, activateVersion } from "../lib/db";
+import {
+  type Project,
+  type ModelVersion,
+  type Prediction,
+  errorMessage,
+} from "../lib/types";
+import { predictor } from "../features/inference/inference.service";
+import { normalizeImage } from "../features/datasets/dataset.service";
+import { exportModel } from "../lib/model-format";
+import { FeedbackCapture } from "../features/inference/FeedbackCapture";
+import { Button } from "../components/ui/Button";
+import { FileDropzone } from "../components/ui/FileDropzone";
+export function PredictPage({ id }: { id: string }) {
+  const [project, setProject] = useState<Project | null>(null),
+    [versions, setVersions] = useState<ModelVersion[]>([]),
+    [selected, setSelected] = useState(""),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false),
+    [ready, setReady] = useState(false),
+    [results, setResults] = useState<Prediction[]>([]),
+    [preview, setPreview] = useState(""),
+    [camera, setCamera] = useState(false),
+    [latency, setLatency] = useState(0);
+  const [feedbackBlob, setFeedbackBlob] = useState<Blob | null>(null);
+  const engine = useRef<Awaited<ReturnType<typeof predictor>> | null>(null),
+    stream = useRef<MediaStream | null>(null),
+    video = useRef<HTMLVideoElement>(null),
+    alive = useRef(true),
+    inFlight = useRef(false);
+  useEffect(() => {
+    alive.current = true;
+    Promise.all([getProject(id), listVersions(id)])
+      .then(([p, v]) => {
+        if (!alive.current) return;
+        setProject(p ?? null);
+        setVersions(v);
+        setSelected(p?.activeVersionId ?? v[0]?.id ?? "");
+      })
+      .catch((e) => {
+        if (alive.current) setError(errorMessage(e));
+      });
+    return () => {
+      alive.current = false;
+      stream.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, [id]);
+  useEffect(() => {
+    if (!camera || !video.current || !stream.current) return;
+    video.current.srcObject = stream.current;
+    void video.current.play().catch((e) => setError(errorMessage(e)));
+  }, [camera]);
+  useEffect(() => {
+    let cancelled = false;
+    setReady(false);
+    setResults([]);
+    setFeedbackBlob(null);
+    const version = versions.find((v) => v.id === selected);
+    if (!version) return;
+    predictor(version.artifact)
+      .then((p) => {
+        if (cancelled) p.dispose();
+        else {
+          engine.current = p;
+          setReady(true);
+        }
+      })
+      .catch((e) => {
+        if (!cancelled) setError(errorMessage(e));
+      });
+    return () => {
+      cancelled = true;
+      engine.current?.dispose();
+      engine.current = null;
+    };
+  }, [selected, versions]);
+  useEffect(
+    () => () => {
+      if (preview) URL.revokeObjectURL(preview);
+    },
+    [preview],
+  );
+  async function predict(blob: Blob) {
+    if (!engine.current || inFlight.current) return;
+    inFlight.current = true;
+    setBusy(true);
+    setError("");
+    const start = performance.now();
+    try {
+      const result = await engine.current.predict(blob);
+      if (alive.current) {
+        setFeedbackBlob(blob);
+        setResults(result);
+        setLatency(performance.now() - start);
+        setPreview(URL.createObjectURL(blob));
+      }
+    } catch (e) {
+      if (alive.current) setError(errorMessage(e));
+    } finally {
+      inFlight.current = false;
+      if (alive.current) setBusy(false);
+    }
+  }
+  async function fromFile(files: File[]) {
+    if (!files[0] || inFlight.current) return;
+    setError("");
+    try {
+      await predict(await normalizeImage(files[0]));
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }
+  async function startCamera() {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia)
+        throw new Error(
+          "Camera requires HTTPS or localhost and browser camera support.",
+        );
+      const s = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 },
+        audio: false,
+      });
+      if (!alive.current) {
+        s.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      stream.current?.getTracks().forEach((t) => t.stop());
+      stream.current = s;
+      setCamera(true);
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }
+  function stopCamera() {
+    stream.current?.getTracks().forEach((t) => t.stop());
+    stream.current = null;
+    setCamera(false);
+  }
+  async function capture() {
+    const v = video.current;
+    if (!v || !v.videoWidth || busy) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = v.videoWidth;
+    canvas.height = v.videoHeight;
+    canvas.getContext("2d")!.drawImage(v, 0, 0);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.9),
+    );
+    if (blob) await predict(blob);
+  }
+  const version = versions.find((v) => v.id === selected);
+  return (
+    <>
+      <a className="back-link" href={`#/projects/${id}`}>
+        ← Dataset
+      </a>
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">03 / ACTIVATE YOUR IDEA</div>
+          <h1>Meet your model.</h1>
+          <p>
+            Test a new image or a camera frame. Predictions run on this device.
+          </p>
+        </div>
+        {version && (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              try {
+                exportModel(version.artifact, project?.name ?? "model");
+              } catch (e) {
+                setError(errorMessage(e));
+              }
+            }}
+          >
+            <Download size={16} /> Export model
+          </Button>
+        )}
+      </div>
+      <a className="small-link" href={`#/projects/${id}/evolve`}>
+        Feedback review, comparisons & version history →
+      </a>
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+      {!versions.length ? (
+        <div className="empty-state">
+          <Image size={40} />
+          <h2>No saved model yet</h2>
+          <p>
+            Train your dataset first, or import a supported model in Settings.
+          </p>
+          <a className="btn btn-primary" href={`#/projects/${id}/train`}>
+            Go to training
+          </a>
+        </div>
+      ) : (
+        <>
+          <section className="panel version-bar">
+            <label className="field">
+              Model version
+              <select
+                disabled={busy}
+                value={selected}
+                onChange={(e) => setSelected(e.target.value)}
+              >
+                {versions.map((v, i) => (
+                  <option value={v.id} key={v.id}>
+                    Version {versions.length - i} ·{" "}
+                    {new Date(v.createdAt).toLocaleString()} ·{" "}
+                    {(v.artifact.evaluation.accuracy * 100).toFixed(1)}%
+                    validation
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Button
+              variant="secondary"
+              disabled={
+                busy || !project || selected === project.activeVersionId
+              }
+              onClick={() => {
+                if (!project) return;
+                void activateVersion(id, selected)
+                  .then(() =>
+                    setProject({ ...project, activeVersionId: selected }),
+                  )
+                  .catch((e) => setError(errorMessage(e)));
+              }}
+            >
+              Make active
+            </Button>
+          </section>
+          <div className="prediction-layout">
+            <section className="panel">
+              <h2>Give it something new</h2>
+              <FileDropzone
+                multiple={false}
+                disabled={!ready || busy}
+                onFiles={(files) => void fromFile(files)}
+              />
+              <div className="camera-actions">
+                {camera ? (
+                  <>
+                    <Button
+                      variant="secondary"
+                      disabled={busy || !ready}
+                      onClick={() => void capture()}
+                    >
+                      <Camera size={16} /> Predict this frame
+                    </Button>
+                    <Button variant="ghost" onClick={stopCamera}>
+                      Stop camera
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    onClick={() => void startCamera()}
+                  >
+                    <Camera size={16} /> Use camera
+                  </Button>
+                )}
+              </div>
+              {camera && (
+                <video
+                  className="camera-video"
+                  ref={video}
+                  autoPlay
+                  muted
+                  playsInline
+                  aria-label="Camera preview"
+                />
+              )}
+              {preview && !camera && (
+                <img
+                  className="prediction-image"
+                  src={preview}
+                  alt="Image being classified"
+                />
+              )}
+            </section>
+            <section className="panel">
+              <div className="section-heading">
+                <h2>Predictions</h2>
+                <span className="tag">
+                  {busy ? "PROCESSING" : ready ? "LOCAL INFERENCE" : "LOADING"}
+                </span>
+              </div>
+              {results.length ? (
+                <>
+                  <div className="prediction-winner">
+                    {results[0].label}
+                    <strong>{(results[0].score * 100).toFixed(1)}%</strong>
+                  </div>
+                  {results.map((r) => (
+                    <div className="prediction-row" key={r.label}>
+                      <div>
+                        <span>{r.label}</span>
+                        <strong>{(r.score * 100).toFixed(1)}%</strong>
+                      </div>
+                      <progress value={r.score} max={1} />
+                    </div>
+                  ))}
+                  <p className="phase-note">
+                    {Math.round(latency)} ms including feature extraction.
+                    Scores are relative softmax outputs, not calibrated
+                    probabilities or proof of correctness.
+                  </p>
+                </>
+              ) : (
+                <div className="empty-monitor">
+                  <RefreshCw size={34} />
+                  <p>
+                    {ready
+                      ? "Add an unseen image to see actual predictions."
+                      : "Loading the saved classifier…"}
+                  </p>
+                </div>
+              )}
+              <div className="notice">
+                No image is uploaded. The verified cached encoder works offline.
+                Camera frames are processed only when you choose “Predict this
+                frame”.
+              </div>
+              {feedbackBlob && project && version && results[0] && (
+                <FeedbackCapture
+                  key={preview}
+                  project={project}
+                  versionId={version.id}
+                  blob={feedbackBlob}
+                  predictedLabel={results[0].label}
+                />
+              )}
+            </section>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pages/PredictPage.tsx =====
+
+===== BEGIN FILE 29/40: apps/web/src/pages/TrainingPage.tsx =====
+SHA256: 9853dc11800c5c5fad52ccffcd1a227c1fcd11e8c2b241d7edb5220096e5560a
+----- CONTENT START -----
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, Play, Square, Activity } from "lucide-react";
+import { getProject, listSamples, commitVersion } from "../lib/db";
+import {
+  train,
+  type TrainingProgress,
+} from "../features/training/training.service";
+import { backendName } from "../lib/ml";
+import {
+  type Project,
+  type Sample,
+  type ModelArtifact,
+  errorMessage,
+  uid,
+} from "../lib/types";
+import { Button } from "../components/ui/Button";
+export function TrainingPage({ id }: { id: string }) {
+  const [project, setProject] = useState<Project | null>(null),
+    [samples, setSamples] = useState<Sample[]>([]),
+    [error, setError] = useState(""),
+    [epochs, setEpochs] = useState(20),
+    [rate, setRate] = useState(0.001),
+    [running, setRunning] = useState(false),
+    [progress, setProgress] = useState<TrainingProgress | null>(null),
+    [result, setResult] = useState<ModelArtifact | null>(null);
+  const controller = useRef<AbortController | null>(null),
+    alive = useRef(true),
+    lock = useRef(false);
+  useEffect(() => {
+    alive.current = true;
+    Promise.all([getProject(id), listSamples(id)])
+      .then(([p, s]) => {
+        if (alive.current) {
+          if (!p) setError("Project not found.");
+          setProject(p ?? null);
+          setSamples(s);
+        }
+      })
+      .catch((e) => {
+        if (alive.current) setError(errorMessage(e));
+      });
+    return () => {
+      alive.current = false;
+      controller.current?.abort();
+    };
+  }, [id]);
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      if (lock.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, []);
+  async function start() {
+    if (!project || lock.current) return;
+    lock.current = true;
+    setRunning(true);
+    setError("");
+    setResult(null);
+    const c = new AbortController();
+    controller.current = c;
+    try {
+      const artifact = await train(
+        project,
+        samples,
+        { epochs, learningRate: rate, seed: 42 },
+        c.signal,
+        (p) => {
+          if (alive.current) setProgress(p);
+        },
+      );
+      if (c.signal.aborted) return;
+      await commitVersion({
+        id: uid(),
+        projectId: id,
+        artifact,
+        createdAt: Date.now(),
+      });
+      if (alive.current) setResult(artifact);
+    } catch (e) {
+      if (alive.current)
+        setError(
+          e instanceof DOMException && e.name === "AbortError"
+            ? "Training cancelled. The previous saved model is unchanged."
+            : errorMessage(e),
+        );
+    } finally {
+      lock.current = false;
+      if (alive.current) setRunning(false);
+      controller.current = null;
+    }
+  }
+  const last = progress?.metrics.at(-1);
+  const ready =
+    project &&
+    project.labels.every(
+      (l) => samples.filter((s) => s.labelId === l.id).length >= 5,
+    );
+  return (
+    <>
+      <a className="back-link" href={`#/projects/${id}`}>
+        ← Dataset
+      </a>
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">02 / TRAIN ON YOUR DEVICE</div>
+          <h1>Let your model learn.</h1>
+          <p>Real image features. Real weight updates. No cloud training.</p>
+        </div>
+        <span className="tag">{project?.name ?? "IMAGE STUDIO"}</span>
+      </div>
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+      <a className="small-link" href={`#/projects/${id}/evolve`}>
+        Review feedback & compare saved versions →
+      </a>
+      <div className="training-layout">
+        <section className="panel">
+          <h2>Training settings</h2>
+          <p className="muted">
+            MobileNet v2 extracts image features; a local classifier learns your
+            classes.
+          </p>
+          <label className="field">
+            Epochs
+            <input
+              type="number"
+              min="1"
+              max="100"
+              step="1"
+              value={epochs}
+              disabled={running}
+              onChange={(e) => setEpochs(Number(e.target.value))}
+            />
+          </label>
+          <label className="field">
+            Learning rate
+            <select
+              value={rate}
+              disabled={running}
+              onChange={(e) => setRate(Number(e.target.value))}
+            >
+              <option value="0.0001">0.0001 — careful</option>
+              <option value="0.001">0.001 — recommended</option>
+              <option value="0.01">0.01 — aggressive</option>
+            </select>
+          </label>
+          <dl className="summary-list">
+            <div>
+              <dt>Dataset</dt>
+              <dd>{samples.length} images</dd>
+            </div>
+            <div>
+              <dt>Classes</dt>
+              <dd>{project?.labels.length ?? 0}</dd>
+            </div>
+            <div>
+              <dt>Validation split</dt>
+              <dd>20% per class</dd>
+            </div>
+            <div>
+              <dt>Split seed</dt>
+              <dd>42</dd>
+            </div>
+          </dl>
+          {running ? (
+            <Button
+              variant="danger"
+              onClick={() => controller.current?.abort()}
+            >
+              <Square size={15} /> Cancel training
+            </Button>
+          ) : (
+            <Button disabled={!ready} onClick={() => void start()}>
+              <Play size={16} /> Train model
+            </Button>
+          )}
+          {!ready && (
+            <p className="muted">
+              Add at least 5 images to each class to begin.
+            </p>
+          )}
+          <p className="phase-note">
+            First run installs a verified encoder pack if needed. Keep this page
+            open; leaving cancels the job. CPU fallback can be slow.
+          </p>
+        </section>
+        <section className="panel training-monitor">
+          <div className="section-heading">
+            <h2>
+              <Activity size={19} /> Training monitor
+            </h2>
+            <span className="tag">
+              {running ? "RUNNING" : result ? "SAVED" : "READY"}
+            </span>
+          </div>
+          {progress ? (
+            <>
+              <p role="status">
+                {progress.stage} · {progress.done}/{progress.total}
+              </p>
+              <progress
+                className="progress"
+                value={progress.done}
+                max={progress.total}
+              />
+              <div className="metric-grid">
+                <div>
+                  <small>Training accuracy</small>
+                  <strong>
+                    {last ? `${(last.accuracy * 100).toFixed(1)}%` : "—"}
+                  </strong>
+                </div>
+                <div>
+                  <small>Validation accuracy</small>
+                  <strong>
+                    {last ? `${(last.valAccuracy * 100).toFixed(1)}%` : "—"}
+                  </strong>
+                </div>
+                <div>
+                  <small>Training loss</small>
+                  <strong>{last?.loss.toFixed(4) ?? "—"}</strong>
+                </div>
+                <div>
+                  <small>Runtime</small>
+                  <strong>{backendName()}</strong>
+                </div>
+              </div>
+              <div
+                className="chart"
+                aria-label="Epoch training and validation accuracy chart"
+              >
+                {progress.metrics.map((m) => (
+                  <div
+                    className="chart-pair"
+                    key={m.epoch}
+                    title={`Epoch ${m.epoch}: training ${(m.accuracy * 100).toFixed(1)}%, validation ${(m.valAccuracy * 100).toFixed(1)}%`}
+                  >
+                    <span
+                      style={{ height: `${Math.max(1, m.accuracy * 100)}%` }}
+                    />
+                    <span
+                      style={{ height: `${Math.max(1, m.valAccuracy * 100)}%` }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="chart-legend">
+                <span>● Training</span>
+                <span>● Validation</span>
+              </p>
+            </>
+          ) : (
+            <div className="empty-monitor">
+              <Activity size={40} />
+              <h3>Your training journey starts here</h3>
+              <p>
+                Live progress and actual epoch metrics will appear when training
+                begins.
+              </p>
+            </div>
+          )}
+          {result && (
+            <div className="success">
+              <h3>Model trained and saved</h3>
+              <p>
+                Held-out validation:{" "}
+                {(result.evaluation.accuracy * 100).toFixed(1)}% on{" "}
+                {result.evaluation.total} images.
+              </p>
+              <a className="btn btn-primary" href={`#/projects/${id}/predict`}>
+                Try your model <ArrowRight size={16} />
+              </a>
+            </div>
+          )}
+        </section>
+      </div>
+      {result && (
+        <section className="panel evaluation">
+          <h2>Validation confusion matrix</h2>
+          <p className="muted">
+            Rows: actual class. Columns: predicted class. This is validation
+            performance, not a separate test set.
+          </p>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Actual / predicted</th>
+                  {result.labels.map((l) => (
+                    <th scope="col" key={l.id}>
+                      {l.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {result.evaluation.matrix.map((row, i) => (
+                  <tr key={result.labels[i].id}>
+                    <th scope="row">{result.labels[i].name}</th>
+                    {row.map((n, j) => (
+                      <td className={i === j ? "diagonal" : ""} key={j}>
+                        {n}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+    </>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pages/TrainingPage.tsx =====
+
+===== BEGIN FILE 30/40: apps/web/src/pages/SettingsPage.tsx =====
+SHA256: e5b569ab56c0de1ecd7af191ebcace3954efdc776c0e083bebfab69ae638068e
+----- CONTENT START -----
+import { useEffect, useRef, useState } from "react";
+import { ShieldCheck, Upload, HardDrive } from "lucide-react";
+import { storageInfo, bytes, capabilities } from "../lib/capabilities";
+import { listProjects, importVersion } from "../lib/db";
+import { readModel } from "../lib/model-format";
+import { type Project, errorMessage, uid } from "../lib/types";
+import { RuntimeSettings } from "../features/settings/RuntimeSettings";
+import { BackupPanel } from "../features/settings/BackupPanel";
+import { Button } from "../components/ui/Button";
+export function SettingsPage() {
+  const [storage, setStorage] = useState<Awaited<
+      ReturnType<typeof storageInfo>
+    > | null>(null),
+    [projects, setProjects] = useState<Project[]>([]),
+    [selected, setSelected] = useState(""),
+    [error, setError] = useState(""),
+    [message, setMessage] = useState(""),
+    [busy, setBusy] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const support = capabilities();
+  useEffect(() => {
+    storageInfo()
+      .then(setStorage)
+      .catch((e) => setError(errorMessage(e)));
+    listProjects()
+      .then((p) => {
+        setProjects(p);
+        setSelected(p[0]?.id ?? "");
+      })
+      .catch((e) => setError(errorMessage(e)));
+  }, []);
+  async function importFile(file: File) {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const artifact = await readModel(file);
+      const p = projects.find((p) => p.id === selected);
+      if (!p) throw new Error("Create and select a project first.");
+      if (
+        !confirm(
+          `Import this model into “${p.name}”? Its class vocabulary will be replaced and all its existing training images deleted. Existing saved model versions remain available. Export does not restore images.`,
+        )
+      )
+        return;
+      await importVersion(p, {
+        id: uid(),
+        projectId: p.id,
+        artifact,
+        createdAt: Date.now(),
+      });
+      setMessage("Model imported. Open this project’s Predict page to use it.");
+      setProjects(await listProjects());
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">YOUR WORKSPACE, YOUR RULES</div>
+          <h1>Privacy & storage</h1>
+          <p>Understand what stays here—and what needs a backup.</p>
+        </div>
+        <ShieldCheck className="accent-icon" size={36} />
+      </div>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      {message && (
+        <p className="success" role="status">
+          {message}
+        </p>
+      )}
+      <div className="settings-grid">
+        <RuntimeSettings />
+        <BackupPanel />
+        <section className="panel">
+          <h2>
+            <HardDrive size={20} /> Browser storage
+          </h2>
+          <div className="storage-number">
+            {storage ? bytes(storage.usage) : "…"}
+            <small> used by this origin</small>
+          </div>
+          <p className="muted">
+            Estimated quota: {storage ? bytes(storage.quota) : "…"}. Browser
+            estimates can change.
+          </p>
+          <p>
+            Persistence:{" "}
+            <strong>
+              {storage?.persistent ? "Granted" : "Not guaranteed"}
+            </strong>
+          </p>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              void (async () => {
+                try {
+                  const granted = await navigator.storage?.persist?.();
+                  setMessage(
+                    granted
+                      ? "Persistent storage granted. Still keep backups."
+                      : "Your browser did not grant persistence. Export important models.",
+                  );
+                  setStorage(await storageInfo());
+                } catch (e) {
+                  setError(errorMessage(e));
+                }
+              })()
+            }
+          >
+            Request persistent storage
+          </Button>
+          <p className="phase-note">
+            Clearing browser/site data deletes projects. Model exports do not
+            include training images. Use the full project backup panel to export
+            images and models together.
+          </p>
+        </section>
+        <section className="panel">
+          <h2>
+            <Upload size={20} /> Import a model
+          </h2>
+          <p className="muted">
+            Only validated NEURON image models exported by this phase. Maximum 8
+            MB. Arbitrary TensorFlow graphs or scripts are not accepted.
+          </p>
+          <label className="field">
+            Target project
+            <select
+              value={selected}
+              disabled={busy}
+              onChange={(e) => setSelected(e.target.value)}
+            >
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <input
+            ref={input}
+            hidden
+            type="file"
+            accept=".json,application/json"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void importFile(file);
+            }}
+          />
+          <Button
+            variant="secondary"
+            disabled={busy || !selected}
+            onClick={() => input.current?.click()}
+          >
+            <Upload size={16} />
+            {busy ? "Importing…" : "Choose model file"}
+          </Button>
+          {!projects.length && (
+            <p>
+              <a href="#/projects">Create a project first →</a>
+            </p>
+          )}
+        </section>
+        <section className="panel">
+          <h2>Device capabilities</h2>
+          <dl className="summary-list">
+            <div>
+              <dt>IndexedDB</dt>
+              <dd>{support.storage ? "Available" : "Unavailable"}</dd>
+            </div>
+            <div>
+              <dt>Camera API</dt>
+              <dd>{support.camera ? "Available" : "Unavailable"}</dd>
+            </div>
+            <div>
+              <dt>Secure context</dt>
+              <dd>{support.secure ? "Yes" : "No"}</dd>
+            </div>
+            <div>
+              <dt>WebGPU API</dt>
+              <dd>{support.webgpu ? "Detected (not used)" : "Not detected"}</dd>
+            </div>
+          </dl>
+          <p className="phase-note">
+            This phase trains with WebGL or CPU—not WebGPU. Detection is not a
+            certification of training performance.
+          </p>
+        </section>
+        <section className="panel">
+          <h2>The local-first promise</h2>
+          <ul className="privacy-list">
+            <li>No account or application backend for this workflow.</li>
+            <li>No analytics or sample uploads.</li>
+            <li>
+              Encoder weights download from Google-hosted model endpoints.
+            </li>
+            <li>Exporting a model is an explicit user action.</li>
+            <li>Private mode or storage eviction can remove local data.</li>
+            <li>
+              Offline reload requires an installed production shell and encoder
+              pack. Online share links are not yet implemented.
+            </li>
+          </ul>
+        </section>
+      </div>
+    </>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pages/SettingsPage.tsx =====
+
+===== BEGIN FILE 31/40: apps/web/src/pages/HomePage.tsx =====
+SHA256: d815987982d19a276c5deeb2209b30fb471858ab6f76767aca20f84f2a8512f7
+----- CONTENT START -----
+import {
+  ArrowRight,
+  Image,
+  Type,
+  AudioLines,
+  Film,
+  Table2,
+  Shapes,
+  Database,
+  Layers,
+  ShieldCheck,
+  BrainCircuit,
+  Sparkles,
+  ChevronRight,
+} from "lucide-react";
+export function HomePage() {
+  return (
+    <>
+      <div className="eyebrow">
+        <span className="status-dot" /> YOUR IDEAS. NO LIMITS.
+      </div>
+      <section className="hero">
+        <div className="hero-copy">
+          <div className="pill">
+            <Sparkles size={13} /> PERSONAL AI, WITHOUT THE COMPLEXITY
+          </div>
+          <h1>
+            Create your own
+            <br />
+            <span className="gradient-text">AI model.</span>
+            <br />
+            Keep it yours.
+          </h1>
+          <p>
+            Turn your images into an intelligent model.
+            <br />
+            Train right in your browser, on your own device.
+            <br />
+            No coding. No accounts. No cloud training.
+          </p>
+          <div className="hero-actions">
+            <a className="btn btn-primary" href="#/projects">
+              Start building <ArrowRight size={17} />
+            </a>
+            <a className="text-link" href="#/settings">
+              How your data stays private <ChevronRight size={15} />
+            </a>
+          </div>
+          <div className="hero-trust">
+            <ShieldCheck size={15} />
+            <span>Your images never leave your browser</span>
+          </div>
+        </div>
+        <div className="hero-art" aria-hidden="true">
+          <div className="orb orb-one" />
+          <div className="orb orb-two" />
+          <div className="floating-chip chip-image">
+            <Image size={25} />
+          </div>
+          <div className="floating-chip chip-brain">
+            <BrainCircuit size={25} />
+          </div>
+          <div className="studio-preview">
+            <div className="window-bar">
+              <i />
+              <i />
+              <i />
+              <span>NEURON STUDIO</span>
+              <span className="preview-local">● LOCAL</span>
+            </div>
+            <div className="preview-body">
+              <div className="preview-side">
+                <BrainCircuit size={24} />
+                <span className="on">
+                  01 <b>Choose data</b>
+                </span>
+                <span>
+                  02 <b>Train model</b>
+                </span>
+                <span>
+                  03 <b>Make it yours</b>
+                </span>
+                <div className="preview-lock">
+                  <ShieldCheck size={16} />
+                  On your device
+                </div>
+              </div>
+              <div className="preview-main">
+                <small>LET’S BUILD SOMETHING</small>
+                <h3>What will your model learn?</h3>
+                <p>Every great model starts with your data.</p>
+                <div className="preview-tiles">
+                  {[
+                    { icon: Image, name: "Images" },
+                    { icon: Type, name: "Text" },
+                    { icon: AudioLines, name: "Audio" },
+                    { icon: Film, name: "Video" },
+                    { icon: Table2, name: "Tabular" },
+                    { icon: Shapes, name: "Custom" },
+                  ].map((item, i) => (
+                    <div className={i === 0 ? "selected" : ""} key={item.name}>
+                      <item.icon size={21} />
+                      <span>{item.name}</span>
+                      {i > 0 && <em>Later phase</em>}
+                    </div>
+                  ))}
+                </div>
+                <div className="preview-button">
+                  Continue with images <ArrowRight size={13} />
+                </div>
+              </div>
+            </div>
+          </div>
+          <span className="handwritten">
+            Your next idea,
+            <br />
+            made intelligent.
+          </span>
+        </div>
+      </section>
+      <section className="principles">
+        {[
+          {
+            icon: Database,
+            title: "Bring your data",
+            text: "Organize images into the classes you want your model to recognize.",
+          },
+          {
+            icon: Layers,
+            title: "Train on your device",
+            text: "Real transfer learning. Your hardware does the work, not a cloud server.",
+          },
+          {
+            icon: BrainCircuit,
+            title: "Make it useful",
+            text: "Test predictions, compare versions, and export your trained model.",
+          },
+          {
+            icon: ShieldCheck,
+            title: "Stay in control",
+            text: "No logins. No image uploads. Your browser is your workspace.",
+          },
+        ].map((item) => (
+          <article key={item.title}>
+            <div className="feature-icon">
+              <item.icon size={21} />
+            </div>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </article>
+        ))}
+      </section>
+      <section className="start-banner">
+        <div className="banner-icon">
+          <Sparkles size={24} />
+        </div>
+        <div>
+          <span className="eyebrow">A SIMPLE PLACE TO START</span>
+          <h2>
+            Image classification.{" "}
+            <span className="muted">Real possibilities.</span>
+          </h2>
+          <p>
+            Teach a model to tell your categories apart. Build something
+            uniquely yours.
+          </p>
+        </div>
+        <a className="btn btn-secondary" href="#/projects">
+          Create a project <ArrowRight size={16} />
+        </a>
+      </section>
+      <p className="phase-note">
+        Phase 02 · Image classification, offline readiness, project backups and
+        reviewed feedback are available. Other data types and online sharing are
+        planned, not active features.
+      </p>
+    </>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pages/HomePage.tsx =====
+
+===== BEGIN FILE 32/40: apps/web/public/manifest.webmanifest =====
+SHA256: 7d13b59d3aae6e36dc91ce322d74ca85ca55e166972ab33d2e566f0fb38bc101
+----- CONTENT START -----
+{
+  "name": "NEURON — Your AI. Your Device.",
+  "short_name": "NEURON",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080d19",
+  "theme_color": "#080d19",
+  "description": "Private on-device image classification workspace.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
+----- CONTENT END -----
+===== END FILE: apps/web/public/manifest.webmanifest =====
+
+===== BEGIN FILE 33/40: apps/web/public/favicon.svg =====
+SHA256: 2bad97c2fcc9c3e875f868aaa4ab18f00b440a6bb5fd08a81e9ae94737dbf392
+----- CONTENT START -----
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="a"><stop stop-color="#39caff"/><stop offset="1" stop-color="#a26bff"/></linearGradient></defs><rect width="128" height="128" rx="28" fill="#0c1424"/><g stroke="url(#a)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M40 92V36l48 56V36M24 64h16m48 0h16"/><circle cx="40" cy="28" r="6"/><circle cx="88" cy="100" r="6"/></g></svg>
+----- CONTENT END -----
+===== END FILE: apps/web/public/favicon.svg =====
+
+===== BEGIN FILE 34/40: apps/web/public/offline.html =====
+SHA256: 8d4a2309f96a09454c75722ed16c61c1c5ebfd400075feba382985c4b1ab8ccb
+----- CONTENT START -----
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><meta name="theme-color" content="#080d19" /><title>NEURON — Offline</title
+  ><style>
+    body {
+      background: #080d19;
+      color: #edf1fc;
+      font: 16px system-ui;
+      max-width: 600px;
+      margin: 15vh auto;
+      padding: 24px;
+    }
+    h1 {
+      color: #b090ff;
+    }
+    p {
+      line-height: 1.8;
+    }
+    a {
+      color: #39caff;
+    }
+  </style>
+  <h1>NEURON is offline.</h1>
+  <p>
+    The complete application shell is not available. Your locally saved project
+    data has not been deliberately deleted. Reconnect and reopen NEURON, then
+    check Settings → Offline readiness.
+  </p>
+  <p><a href="/">Try opening the workspace again</a></p>
+</html>
+----- CONTENT END -----
+===== END FILE: apps/web/public/offline.html =====
+
+===== BEGIN FILE 35/40: apps/web/src/styles/phase2.css =====
+SHA256: 119e998c3bb67e7b9cc582cece2dcd47bfd53d61213e639482773fa81e0ab67c
+----- CONTENT START -----
+.wrap {
+  flex-wrap: wrap;
+}
+.check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #b7c9df;
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 22px 0;
+}
+.check-label input {
+  margin-top: 4px;
+  accent-color: #a080ff;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.offline-notice {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+.offline-notice a {
+  color: #bfa6ff;
+}
+.feedback-capture {
+  border-top: 1px solid #31415e;
+  padding-top: 24px;
+  margin-top: 24px;
+}
+.feedback-capture p {
+  font-size: 12px;
+  color: #a5b7d0;
+}
+.evolution-stack {
+  display: grid;
+  gap: 24px;
+}
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 18px;
+  margin: 25px 0;
+}
+.review-grid article {
+  border: 1px solid #2a3955;
+  background: #0d1727;
+  padding: 14px;
+  border-radius: 10px;
+}
+.review-image {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 15px;
+}
+.review-grid strong {
+  display: block;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.review-grid p {
+  font-size: 11px;
+  color: #8ea5c4;
+}
+.comparison-selects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.evolution-stack .btn {
+  white-space: normal;
+}
+.settings-grid > .panel {
+  align-self: start;
+}
+.settings-grid .inline {
+  row-gap: 12px;
+}
+@media (max-width: 650px) {
+  .comparison-selects {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .review-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 650px) {
+  .evolution-stack .metric-grid { grid-template-columns: 1fr; }
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/styles/phase2.css =====
+
+===== BEGIN FILE 36/40: README.md =====
+SHA256: 56e3f24afa96051781a7da309fdc10129633be35b15ea9243f2fb8467864e332
+----- CONTENT START -----
+# NEURON — Phase 2
+
+Requires the 40-file Phase 1 baseline plus this 40-file Phase 2 update. Do not delete unrelated scaffold files. Node.js 20.19+ or 22.12+, pnpm 9.15.5.
+
+## Run and verify
+
+    pnpm install
+    pnpm typecheck
+    pnpm test
+    pnpm build
+    pnpm dev
+
+## Test offline on the PRODUCTION build
+
+    pnpm build
+    pnpm --filter @neuron/web preview --port 4173
+
+Open http://localhost:4173. In Settings wait for Application shell → Installed; download the ~14 MB image encoder and wait for Verified. Then disconnect networking and reload. Local projects, training, model import/export and inference are available subject to browser APIs/hardware. Vite development deliberately does not install a service worker. A production service worker precaches hashed application bundles including lazy routes; the encoder is separately SHA-256 pinned. If upstream assets change unexpectedly installation fails closed. Investigate/model-license-review before updating pins, never disable verification.
+
+## Origins matter
+
+Browser storage is scoped to scheme + hostname + port. Projects at localhost:5173 do not automatically appear at localhost:4173, and a deployed domain has separate storage too. This does not mean the projects were deleted. With Phase 2 running on the original origin, export a full project backup there, then restore it on the new origin. Model caches are downloaded separately for each origin. Do not clear site data as a troubleshooting shortcut. Development and production previews should use different ports so a production service worker does not intercept a development session.
+
+## Phase 2 features
+
+- Production app-shell offline caching and explicit safe waiting-update UI.
+- Streaming bounded encoder downloads, cancellation, staging-cache commit, cryptographic verification on installation and every cached load. Cache corruption yields an actionable recovery path.
+- Full project JSON backups: normalized images, feedback, model versions and active selection. Restores always create a NEW project and remap IDs in a single transaction, after validating checksums, schemas and decoding bounded JPEG images. No executable graphs are imported.
+- Explicitly consented prediction feedback → review queue → approve to dataset → manual retrain → choose/rollback model.
+- Dataset duplicate detection based on normalized JPEG bytes. This is NOT semantic/near-duplicate detection.
+- Model-version comparisons warn when validation fingerprints differ or are missing (legacy Phase 1 artifacts remain usable).
+- IndexedDB v1→v2 additive migration preserves existing projects/images/models; adds a feedback store.
+
+Backup limits: 1,000 samples, 100 feedback items, 50 model versions, 32 MB images and a 64 MB JSON file. Limits deliberately bound memory use. Backups are NOT encrypted and contain your images. A model-only export still contains no samples. Do not confuse the two.
+
+## Security and lifecycle
+
+No account or cloud training. Download requests go to Google/Kaggle endpoints; images are never uploaded by local workflows. Explicit local export can reveal sensitive data. Browser storage and caches remain evictable; keep backups outside the browser. Existing shell caches are retained to avoid breaking old open tabs; storage cleanup for old shell versions is not automated in this phase.
+
+Safe explicit updates coordinate running training/download/backup jobs using Web Locks across same-origin tabs. If Web Locks is unavailable, close all NEURON tabs and reopen to apply updates. A first installation claims clients but never forces a waiting update into an existing session. A future browser restart or closing all tabs can also activate a waiting service worker normally.
+
+The app assumes deployment at origin root /. HTTPS/localhost required. Hosting response headers need provider-specific configuration; public/\_headers is honored only by compatible hosts. Keep correct JavaScript MIME types and do not rewrite service-worker.js to HTML. This phase does not deploy the original scaffold's infrastructure stubs.
+
+## Still not completed
+
+Training remains on the main browser thread with async yields. No encrypted public share links, WebRTC, non-image modalities, independent test-dataset UI, continuous camera streaming, semantic duplicate detection, encrypted backups, resumable training, browser-wide storage locks against all manual edits, or universal hardware/performance guarantee. Model evolution is explicit reviewed retraining, never silent self-modification. An accessibility/security/model-license audit and physical-device validation remain release gates. Mobile/OS PWA installation support varies; SVG manifest icon support alone does not certify installability on every device.
+
+## Numerical meaning
+
+Frozen MobileNet V2 [0,1] input normalization matches the published TFJS encoder configuration. Model training updates the local softmax head. Validation data stays out of fit. Fingerprints identify exact normalized bytes and class vocabulary; matching sets do not create an independent test or remove selection bias. Softmax scores are relative outputs, not calibrated certainty.
+----- CONTENT END -----
+===== END FILE: README.md =====
+
+===== BEGIN FILE 37/40: apps/web/src/test/offline-assets.test.ts =====
+SHA256: c0b97a9a839806cc4ad3182ba09911744eb0be055be9854eee68f66f64b325d4
+----- CONTENT START -----
+import { describe, it, expect } from "vitest";
+import { MODEL_FILES, validateEncoderManifest } from "../pwa/asset-manager";
+import { runActivity, activeJobs } from "../pwa/update-manager";
+describe("pinned encoder boundary", () => {
+  it("pins every shard and manifest", () => {
+    expect(MODEL_FILES).toHaveLength(5);
+    for (const f of MODEL_FILES) {
+      expect(f.hash).toMatch(/^[a-f0-9]{64}$/);
+      expect(f.bytes).toBeGreaterThan(0);
+    }
+  });
+  it("rejects manifest paths that escape the approved pack", () =>
+    expect(() =>
+      validateEncoderManifest({
+        modelTopology: {},
+        weightsManifest: [{ paths: ["../../evil"], weights: [] }],
+      }),
+    ).toThrow());
+  it("accepts the exact bounded shard list", () =>
+    expect(
+      validateEncoderManifest({
+        modelTopology: {},
+        weightsManifest: [
+          { paths: MODEL_FILES.slice(1).map((f) => f.name), weights: [] },
+        ],
+      }),
+    ).toBeTruthy());
+  it("tracks and releases activity on failure", async () => {
+    await expect(
+      runActivity(async () => {
+        expect(activeJobs()).toBe(1);
+        throw new Error("cancel");
+      }),
+    ).rejects.toThrow("cancel");
+    expect(activeJobs()).toBe(0);
+  });
+});
+----- CONTENT END -----
+===== END FILE: apps/web/src/test/offline-assets.test.ts =====
+
+===== BEGIN FILE 38/40: apps/web/src/test/backup-format.test.ts =====
+SHA256: 91b7bc6b7c2d320612b6a8f928bcbd61094d1e39c9fb90b5dcb7c10b3e395886
+----- CONTENT START -----
+import { describe, it, expect } from "vitest";
+import {
+  encodeBackup,
+  decodeBackup,
+  validateBackupShape,
+  type Snapshot,
+} from "../lib/backup-format";
+import { sha256 } from "../lib/checksums";
+function snapshot(): Snapshot {
+  return {
+    project: {
+      id: "p",
+      name: "Plants",
+      labels: [
+        { id: "a", name: "A" },
+        { id: "b", name: "B" },
+      ],
+      createdAt: 1,
+      updatedAt: 2,
+    },
+    samples: [
+      {
+        id: "s",
+        projectId: "p",
+        labelId: "a",
+        createdAt: 1,
+        blob: new Blob([new Uint8Array([255, 216, 255, 224, 0, 0])], {
+          type: "image/jpeg",
+        }),
+      },
+    ],
+    versions: [],
+    feedback: [],
+  };
+}
+describe("full project backup", () => {
+  it("hashes known vectors", async () =>
+    expect(await sha256("abc")).toBe(
+      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    ));
+  it("round trips media and remaps IDs without overwriting the source", async () => {
+    const s = snapshot(),
+      file = await encodeBackup(s),
+      restored = await decodeBackup(file);
+    expect(restored.project.id).not.toBe("p");
+    expect(restored.samples[0].id).not.toBe("s");
+    expect(restored.samples[0].projectId).toBe(restored.project.id);
+    expect(
+      new Uint8Array(await restored.samples[0].blob.arrayBuffer()),
+    ).toEqual(new Uint8Array(await s.samples[0].blob.arrayBuffer()));
+  });
+  it("rejects corrupted media before restore", async () => {
+    const raw = JSON.parse(await (await encodeBackup(snapshot())).text());
+    raw.samples[0].hash = "0".repeat(64);
+    await expect(decodeBackup(new Blob([JSON.stringify(raw)]))).rejects.toThrow(
+      "checksum",
+    );
+  });
+  it("rejects missing active versions", async () => {
+    const raw = JSON.parse(await (await encodeBackup(snapshot())).text());
+    raw.project.activeVersionId = "absent";
+    expect(() => validateBackupShape(raw)).toThrow("Active model");
+  });
+  it("rejects duplicate labels", async () => {
+    const raw = JSON.parse(await (await encodeBackup(snapshot())).text());
+    raw.project.labels[1].name = "A";
+    expect(() => validateBackupShape(raw)).toThrow("classes");
+  });
+  it("rejects unknown backup formats", async () =>
+    await expect(
+      decodeBackup(new Blob(['{"format":"javascript"}'])),
+    ).rejects.toThrow());
+  it("rejects invalid JSON", async () =>
+    await expect(decodeBackup(new Blob(["{"]))).rejects.toThrow("JSON"));
+  it("enforces sample count", async () => {
+    const raw = JSON.parse(await (await encodeBackup(snapshot())).text());
+    raw.samples = Array(1001).fill(raw.samples[0]);
+    expect(() => validateBackupShape(raw)).toThrow("limits");
+  });
+});
+----- CONTENT END -----
+===== END FILE: apps/web/src/test/backup-format.test.ts =====
+
+===== BEGIN FILE 39/40: apps/web/src/test/storage-evolution.test.ts =====
+SHA256: d68e08e7d8484c44fa257e9e9446024fa8bf9dee6019bf290f5e579e9211958a
+----- CONTENT START -----
+import "fake-indexeddb/auto";
+import { beforeEach, afterAll, describe, it, expect } from "vitest";
+import { openDB, deleteDB } from "idb";
+import {
+  activateVersion,
+  database,
+  closeDatabase,
+  getProject,
+  deleteProject,
+  snapshotProject,
+} from "../lib/db";
+import {
+  queueFeedback,
+  approveFeedback,
+  discardFeedback,
+  listFeedback,
+  comparable,
+} from "../features/evolution/evolution.service";
+import type { ModelVersion, Project } from "../lib/types";
+const project: Project = {
+  id: "p",
+  name: "Test",
+  labels: [
+    { id: "a", name: "A" },
+    { id: "b", name: "B" },
+  ],
+  createdAt: 1,
+  updatedAt: 1,
+};
+const artifact = {
+  format: "neuron-image",
+  version: 1,
+  labels: project.labels,
+} as unknown as ModelVersion["artifact"];
+const version: ModelVersion = {
+  id: "v",
+  projectId: "p",
+  createdAt: 1,
+  artifact,
+};
+beforeEach(async () => {
+  await closeDatabase();
+  await deleteDB("neuron-local");
+});
+afterAll(closeDatabase);
+async function setup() {
+  const db = await database();
+  await db.put("projects", project);
+  await db.put("versions", version);
+  return db;
+}
+describe("storage migration and consent workflow", () => {
+  it("activation preserves the latest class vocabulary", async () => {
+    const db = await setup();
+    await db.put("projects", {
+      ...project,
+      labels: [
+        { id: "a", name: "Updated A" },
+        { id: "b", name: "B" },
+      ],
+    });
+    await activateVersion("p", "v");
+    expect((await getProject("p"))?.labels[0].name).toBe("Updated A");
+    expect((await getProject("p"))?.activeVersionId).toBe("v");
+  });
+  it("rejects activating a version from another project", async () => {
+    const db = await setup();
+    await db.put("versions", {
+      ...version,
+      id: "foreign",
+      projectId: "different",
+    });
+    await expect(activateVersion("p", "foreign")).rejects.toThrow("not found");
+    expect((await getProject("p"))?.activeVersionId).toBeUndefined();
+  });
+  it("preserves original v1 records during additive upgrade", async () => {
+    const old = await openDB("neuron-local", 1, {
+      upgrade(db) {
+        db.createObjectStore("projects", { keyPath: "id" });
+        db.createObjectStore("samples", { keyPath: "id" }).createIndex(
+          "by-project",
+          "projectId",
+        );
+        db.createObjectStore("versions", { keyPath: "id" }).createIndex(
+          "by-project",
+          "projectId",
+        );
+      },
+    });
+    await old.put("projects", project);
+    await old.put("versions", version);
+    await old.put("samples", {
+      id: "legacy",
+      projectId: "p",
+      labelId: "a",
+      createdAt: 1,
+      blob: new Blob(["jpeg"], { type: "image/jpeg" }),
+    });
+    old.close();
+    expect(await getProject("p")).toEqual(project);
+    const snapshot = await snapshotProject("p");
+    expect(snapshot.samples).toHaveLength(1);
+    expect(snapshot.versions).toHaveLength(1);
+    expect((await database()).objectStoreNames.contains("feedback")).toBe(true);
+  });
+  it("does not approve a queued image until explicit review", async () => {
+    await setup();
+    const f = await queueFeedback(
+      "p",
+      "v",
+      "a",
+      new Blob(["jpeg"], { type: "image/jpeg" }),
+      "B",
+    );
+    expect((await snapshotProject("p")).samples).toHaveLength(0);
+    await approveFeedback(f.id);
+    expect((await snapshotProject("p")).samples).toHaveLength(1);
+    expect(await listFeedback("p")).toHaveLength(0);
+  });
+  it("rejects duplicate feedback without consuming the pending item", async () => {
+    await setup();
+    const blob = new Blob(["same"], { type: "image/jpeg" });
+    const a = await queueFeedback("p", "v", "a", blob, "A");
+    await approveFeedback(a.id);
+    const b = await queueFeedback("p", "v", "b", blob, "A");
+    await expect(approveFeedback(b.id)).rejects.toThrow("already exists");
+    expect(await listFeedback("p")).toHaveLength(1);
+  });
+  it("discard does not modify training samples", async () => {
+    await setup();
+    const f = await queueFeedback(
+      "p",
+      "v",
+      "a",
+      new Blob(["jpeg"], { type: "image/jpeg" }),
+      "A",
+    );
+    await discardFeedback(f.id);
+    expect((await snapshotProject("p")).samples).toHaveLength(0);
+    expect(await listFeedback("p")).toHaveLength(0);
+  });
+  it("deleting a project deletes related feedback too", async () => {
+    await setup();
+    await queueFeedback(
+      "p",
+      "v",
+      "a",
+      new Blob(["jpeg"], { type: "image/jpeg" }),
+      "A",
+    );
+    await deleteProject("p");
+    expect(await listFeedback("p")).toHaveLength(0);
+    expect(await getProject("p")).toBeUndefined();
+  });
+  it("rejects removed classes", async () => {
+    await setup();
+    await expect(
+      queueFeedback(
+        "p",
+        "v",
+        "missing",
+        new Blob(["jpeg"], { type: "image/jpeg" }),
+        "A",
+      ),
+    ).rejects.toThrow();
+  });
+  it("warns on incomparable legacy models", () =>
+    expect(comparable(version, version)).toBe(false));
+  it("compares only identical validation fingerprints", () => {
+    const a = {
+      ...version,
+      artifact: {
+        ...artifact,
+        provenance: {
+          datasetHash: "1".repeat(64),
+          validationHash: "2".repeat(64),
+          seed: 42,
+          sampleCount: 10,
+        },
+      },
+    };
+    expect(comparable(a, a)).toBe(true);
+    expect(
+      comparable(a, {
+        ...a,
+        artifact: {
+          ...a.artifact,
+          provenance: {
+            ...a.artifact.provenance,
+            validationHash: "3".repeat(64),
+          },
+        },
+      }),
+    ).toBe(false);
+  });
+});
+----- CONTENT END -----
+===== END FILE: apps/web/src/test/storage-evolution.test.ts =====
+
+===== BEGIN FILE 40/40: apps/web/src/pages/ProjectPage.tsx =====
+SHA256: 24edd00df31653f005e807341f8338319770237012b47131b0484c04bbb0f3f1
+----- CONTENT START -----
+import { useEffect, useState } from "react";
+import { ArrowRight, Plus, Trash2, Image as ImageIcon } from "lucide-react";
+import { getProject, listSamples, saveProject, deleteLabel } from "../lib/db";
+import { type Project, type Sample, uid, errorMessage } from "../lib/types";
+import { cleanName } from "../features/projects/project.service";
+import { addImages, removeSample } from "../features/datasets/dataset.service";
+import { Button } from "../components/ui/Button";
+import { FileDropzone } from "../components/ui/FileDropzone";
+function Thumbnail({
+  sample,
+  onRemove,
+  disabled,
+}: {
+  sample: Sample;
+  onRemove: () => void;
+  disabled: boolean;
+}) {
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    const u = URL.createObjectURL(sample.blob);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [sample.blob]);
+  return (
+    <div className="sample-thumb">
+      <img src={url} alt="Training sample" />
+      <button aria-label="Remove sample" disabled={disabled} onClick={onRemove}>
+        ×
+      </button>
+    </div>
+  );
+}
+export function ProjectPage({ id }: { id: string }) {
+  const [project, setProject] = useState<Project | null>(null),
+    [samples, setSamples] = useState<Sample[]>([]),
+    [error, setError] = useState(""),
+    [loading, setLoading] = useState(true),
+    [busy, setBusy] = useState(false),
+    [status, setStatus] = useState("");
+  async function refresh() {
+    try {
+      const [p, s] = await Promise.all([getProject(id), listSamples(id)]);
+      if (!p) throw new Error("Project not found.");
+      setProject(p);
+      setSamples(s);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    void refresh();
+  }, [id]);
+  async function mutate(action: () => Promise<unknown>) {
+    setBusy(true);
+    setError("");
+    try {
+      await action();
+      await refresh();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function upload(labelId: string, files: File[]) {
+    if (!files.length || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await addImages(id, labelId, files, samples.length, (n) =>
+        setStatus(`Saved ${n} of ${files.length} images`),
+      );
+      setStatus(`Added ${result.saved} images.`);
+      if (result.errors.length) setError(result.errors.slice(0, 5).join("\n"));
+      await refresh();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function rename(labelId: string, current: string) {
+    if (!project) return;
+    const name = prompt("Class name", current);
+    if (name === null) return;
+    await mutate(async () => {
+      const clean = cleanName(name);
+      if (
+        project.labels.some(
+          (l) =>
+            l.id !== labelId && l.name.toLowerCase() === clean.toLowerCase(),
+        )
+      )
+        throw new Error("Class name already exists.");
+      await saveProject({
+        ...project,
+        labels: project.labels.map((l) =>
+          l.id === labelId ? { ...l, name: clean } : l,
+        ),
+        updatedAt: Date.now(),
+      });
+    });
+  }
+  if (loading) return <p role="status">Loading your project…</p>;
+  if (!project)
+    return (
+      <p className="error" role="alert">
+        {error || "Project not found."}
+      </p>
+    );
+  const ready = project.labels.every(
+    (l) => samples.filter((s) => s.labelId === l.id).length >= 5,
+  );
+  return (
+    <>
+      <a className="back-link" href="#/projects">
+        ← All projects
+      </a>
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">01 / CHOOSE YOUR DATA</div>
+          <h1>{project.name}</h1>
+          <p>
+            Give each class a name, then add diverse examples. At least 5 images
+            per class.
+          </p>
+        </div>
+        <a
+          className={`btn btn-primary ${!ready || busy ? "disabled" : ""}`}
+          aria-disabled={!ready || busy}
+          href={ready && !busy ? `#/projects/${id}/train` : undefined}
+        >
+          Train model <ArrowRight size={17} />
+        </a>
+      </div>
+      <a className="small-link" href={`#/projects/${id}/evolve`}>
+        Review feedback, compare versions & roll back →
+      </a>
+      <div className="workflow-tabs">
+        <span className="current">1. Dataset</span>
+        <a href={`#/projects/${id}/train`}>2. Train & evaluate</a>
+        <a href={`#/projects/${id}/predict`}>3. Predict & export</a>
+      </div>
+      <div className="notice">
+        <ImageIcon size={18} />
+        <span>
+          Your images are processed locally. Uploads are resized to at most
+          768px and stored in this browser. Existing models keep their original
+          class names until retrained.
+        </span>
+      </div>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      {status && (
+        <p role="status" className="muted">
+          {status}
+        </p>
+      )}
+      <div className="dataset-grid">
+        {project.labels.map((label, index) => {
+          const images = samples.filter((s) => s.labelId === label.id);
+          return (
+            <section className="panel class-panel" key={label.id}>
+              <div className="section-heading">
+                <div className="class-heading">
+                  <span className="class-number">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <button
+                    className="class-name"
+                    title="Rename class"
+                    disabled={busy}
+                    onClick={() => void rename(label.id, label.name)}
+                  >
+                    {label.name} <small>edit</small>
+                  </button>
+                </div>
+                <div className="inline">
+                  <span className="count-pill">{images.length}</span>
+                  <Button
+                    variant="ghost"
+                    disabled={busy || project.labels.length <= 2}
+                    aria-label={`Delete ${label.name}`}
+                    onClick={() => {
+                      if (confirm(`Delete ${label.name} and its samples?`))
+                        void mutate(() => deleteLabel(project, label.id));
+                    }}
+                  >
+                    <Trash2 size={15} />
+                  </Button>
+                </div>
+              </div>
+              <FileDropzone
+                disabled={busy}
+                onFiles={(files) => void upload(label.id, files)}
+              />
+              <div className="sample-grid">
+                {images.slice(0, 120).map((s) => (
+                  <Thumbnail
+                    key={s.id}
+                    sample={s}
+                    disabled={busy}
+                    onRemove={() => void mutate(() => removeSample(s.id))}
+                  />
+                ))}
+              </div>
+              {images.length > 120 && (
+                <small>Showing the first 120 of {images.length} images.</small>
+              )}
+              <p
+                className={`sample-status ${images.length >= 5 ? "ready" : ""}`}
+              >
+                {images.length >= 5
+                  ? "✓ Ready to train"
+                  : `${5 - images.length} more images needed`}
+              </p>
+            </section>
+          );
+        })}
+      </div>
+      <Button
+        variant="secondary"
+        disabled={busy || project.labels.length >= 20}
+        onClick={() =>
+          void mutate(async () => {
+            const name = prompt("New class name");
+            if (name === null) return;
+            const clean = cleanName(name);
+            if (
+              project.labels.some(
+                (l) => l.name.toLowerCase() === clean.toLowerCase(),
+              )
+            )
+              throw new Error("Class name already exists.");
+            await saveProject({
+              ...project,
+              labels: [...project.labels, { id: uid(), name: clean }],
+              updatedAt: Date.now(),
+            });
+          })
+        }
+      >
+        <Plus size={16} /> Add class
+      </Button>
+      <p className="phase-note">
+        {samples.length} / 1,000 images · Diverse backgrounds and lighting
+        improve your model. Avoid duplicate frames: they can inflate validation
+        scores.
+      </p>
+    </>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pages/ProjectPage.tsx =====
+
+END OF PHASE 2 HANDOFF — ALL 40 FILE SECTIONS INCLUDED.

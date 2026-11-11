@@ -1,0 +1,4058 @@
+NEURON — PHASE 3 / COMPLETE 40-FILE IMPLEMENTATION HANDOFF
+=========================================================
+REAL ENCRYPTED MODEL SHARING — APPLY ON TOP OF PHASE 1 AND PHASE 2
+
+This file contains the complete code for exactly 40 paths. Nothing is replaced by
+ellipsis, pseudo-code, a stub, or a "continue here" instruction. Existing unrelated
+scaffold files remain unfinished until a phase implements them. Do not claim they
+work because this phase builds successfully.
+
+APPLY TO THE EXISTING REPOSITORY
+--------------------------------
+Target root: c:\Users\pandr\Downloads\Neuron
+Do not create another nested neuron/phase3 project.
+The assistant reviewed its existing Phase 1/2 baseline, not the inaccessible Windows
+filesystem. Back up/commit local edits and inspect any user changes before replacing.
+
+Apply the content of every BEGIN FILE / END FILE section to its exact relative path.
+Only text between CONTENT START and CONTENT END belongs in the file. Preserve all
+other source and configuration files. This update contains:
+  12 replacements for implemented Phase 1/2 files;
+  14 implementations of existing scaffold paths;
+  14 new paths.
+That is 40 file sections, not 40 additional unique implementations. Across all three
+phases there are 91 implemented/configuration/documentation paths. Do not pad the
+project to 120 or import unused scaffold stubs just to match a misleading file count.
+
+Do not rerun create_neuron.py, reapply earlier handoffs over this one, clear browser
+site data, or silently replace real cryptography/training/relay endpoints with mocks.
+The main project database remains version 2. Share receipts use a SEPARATE version-1
+neuron-sharing database so deleting a project does not automatically lose revocation
+access. Existing Phase 2 samples/models/feedback continue to work.
+
+IMPORTANT NEW REQUIREMENT: NODE.JS 22.12 OR NEWER
+------------------------------------------------
+The real relay emulator needs Node 22, not the Node 20 used by earlier phases.
+Verified here on Node 22.23.4 with pnpm 9.15.5. First run `node --version` in your
+terminal and upgrade/restart the terminal if necessary. Do not ignore engine errors.
+
+From the existing repository root:
+
+    pnpm install
+    pnpm typecheck
+    pnpm test
+    pnpm build
+    pnpm audit
+
+If needed, install pnpm with: npm install --global pnpm@9.15.5
+If PowerShell blocks pnpm.ps1, use pnpm.cmd. Alternatively use
+`npx --yes pnpm@9.15.5` in place of `pnpm`.
+
+KEEP root package.json's pnpm overrides for Miniflare's undici/sharp dependencies.
+They are tested advisory fixes. Do not silently use a package manager that ignores
+them. Commit the real regenerated pnpm-lock.yaml after installation/review. The
+handoff deliberately does not fabricate or truncate a generated lockfile.
+
+RUN THE APPLICATION AND OPTIONAL SHARING RELAY
+-----------------------------------------------
+Use TWO TERMINALS, both opened at the existing repository root.
+
+Terminal 1:
+    pnpm dev:relay
+
+Terminal 2:
+    pnpm dev
+
+The relay listens on 8787; the Vite browser app normally listens on 5173. Keep both
+running for sharing. The relay compiles its Worker at startup; restart the relay
+when changing relay source. Local R2/DO state is under services/relay/.local, ignored
+by Git. It is development data, not production durability or an external backup.
+
+The browser calls only relative /api/shares URLs. Vite's server-side proxy forwards
+them to 127.0.0.1:8787. Browser-facing code never calls localhost for another service.
+NEURON_RELAY_TARGET is an optional SERVER-ONLY environment override. Do not put
+storage credentials, deletion tokens or RATE_SALT in VITE_* variables.
+
+Training, saved models, datasets, feedback and local backups do NOT require the relay.
+Only online model link distribution needs it. There is no paid API key or account
+required for local emulation. This is real Worker/R2/DO code executed locally by
+Miniflare/workerd, not fake fetch responses or a cloud deployment.
+
+PRODUCTION BUILD / OFFLINE CHECK
+--------------------------------
+    pnpm build
+    pnpm --filter @neuron/web preview --port 4173 --strictPort
+
+Leave Terminal 1's relay running for online sharing. A production preview still uses
+a LOCAL server proxy; that proxy is NOT included in the downloaded static assets.
+For true cloud hosting, route same-origin /api/shares* to the deployed Worker.
+
+Production offline reload requires Settings -> Application shell Installed and the
+verified encoder pack. Vite dev intentionally does not install a service worker.
+Sharing itself requires networking; a model already imported locally can predict
+offline with an installed shell/encoder even after its original link is revoked.
+
+ORIGIN WARNING: localhost:5173, localhost:4173, localhost:4174, 127.0.0.1, a live
+preview host and a deployed domain each have separate browser storage. Missing data
+on a new origin is not deletion. Transfer projects using full backups; install the
+encoder pack separately per origin. Receipts are also origin-bound. Keep production
+and dev on separate ports so a production worker does not intercept development.
+
+WHAT PHASE 3 IMPLEMENTS
+------------------------
+- Saved model -> explicit consent -> fresh AES-256-GCM encryption -> actual relay
+  upload -> expiring link. Every upload uses a fresh CSPRNG key and 96-bit IV, with
+  authenticated protocol-specific additional data and a 128-bit authentication tag.
+- Whitelisted model fields only. Unknown imported fields are stripped. Project images
+  and feedback are not part of the encrypted payload. Model weights may still reveal
+  training information, which the consent UI explicitly warns about.
+- The encryption key is only in the URL fragment; it is never an API parameter or
+  upload header. Recipient strips the incoming key from the visible address bar and
+  keeps it in memory. Preserve the ORIGINAL secret link if reopening is needed.
+- Recipient explicitly downloads/decrypts, validates the supported artifact, inspects
+  its metadata, then imports as a NEW local project. No arbitrary executable model
+  graphs or scripts are accepted. Existing local projects are not overwritten.
+- Independent deletion capability: a separate random 256-bit token, stored locally
+  and sent only in the DELETE Authorization header. Relay stores its SHA-256 hash.
+- Downloadable/importable sensitive deletion receipts, separate from project backups.
+  Conflicting receipts cannot overwrite existing access/deletion capabilities.
+- Local receipt management clearly distinguishes Revoke remote link from Forget local
+  receipt. Deleting a project is NOT remote revocation. Lost tokens cannot be recovered
+  without a saved receipt. Expiry remains enforced even if a receipt is lost.
+- A real Cloudflare Worker router, private R2 ciphertext storage, a transactional
+  SQLite-backed Durable Object budget service and an hourly expiry-cleanup handler.
+- Strict body sizes, bounded response parsing, canonical secret encodings, route and
+  TTL validation, explicit same-origin mutation policy, no-store API responses and
+  a service-worker bypass for /api/shares. No secret route data is rendered in nav.
+- A usable same-origin development/production-preview proxy and fail-closed cloud
+  configuration, not an invented public endpoint or a silently created cloud resource.
+
+REAL LIMITS AND SECURITY BOUNDARIES
+------------------------------------
+This is a working phase, NOT a claim that the entire NEURON roadmap is finished,
+perfect, audited or publicly deployed. Keep later features labeled honestly.
+
+The relay sees client connection metadata, ciphertext length, timing and expiry.
+It does not get the encryption key through this protocol. Any holder of the full
+secret link can decrypt or reshare. Encryption is not guaranteed availability.
+Compromised frontend code, browser extensions, endpoints and recipients are outside
+this cryptographic boundary. Do not add analytics/error logs that capture links,
+fragments, Authorization headers, receipt files or plaintext model payloads.
+
+A trained model can leak information. "No source image transfer" is not a guarantee
+of anonymity or privacy against model inference attacks. Labels/model names can also
+be sensitive. Receipts contain BOTH access and deletion capabilities: keep them private.
+Project backups deliberately do not contain them; export receipts separately.
+
+Link lifetimes accepted by protocol: 60 seconds, 15 minutes, 1 hour, 24 hours. UI shows
+15 minutes / 1 hour / 24 hours. API download denies expired objects immediately and
+removes stale data on access. Hourly cron cleans unaccessed expired ciphertext. Cloud
+provider backup/retention policy still applies. Revocation cannot erase data someone
+already downloaded/imported. The browser verification explicitly demonstrates that.
+If an upload is cancelled after server receipt but before the response, an unconfirmed
+object can remain until expiry because its reference was not received. No fake claim
+of guaranteed cancellation/revocation is made for that distributed-systems case.
+
+Envelope maximum: 8 MB +64 bytes. Model payload maximum: 8 MB. Receipts: 16 KB import.
+Worker validates framing and size, NOT the encrypted content's semantics (it lacks
+the key). A malicious direct client can upload arbitrary framed bytes. Official
+client payload sanitization is not proof that all Internet traffic is a model.
+
+Anonymous fixed-hour budgets, enforced atomically by Durable Object:
+  Per client: 3 upload reservations, 30 downloads, 20 deletions per hour.
+  Global:     50 uploads, 500 downloads, 500 deletions per hour.
+Client keys are salted hashes of Cloudflare's connecting IP; NAT users share limits.
+Development may group local users under a local IP. A request rejected after reserving
+budget is intentionally not refunded. Restarting/clearing local emulator state is NOT
+an application quota bypass feature and is not a production reset mechanism.
+
+Origin/header checks defend browser-origin misuse, not non-browser clients able to
+forge HTTP headers. Quotas cannot cap every edge/DO/R2 cost or prevent every DoS.
+Provider edge rate limits, billing alerts, kill switches, retention/governance and
+abuse review are MANDATORY before exposing anonymous uploads publicly.
+
+DEPLOYMENT IS EXPLICIT, NOT DONE BY THIS HANDOFF
+------------------------------------------------
+Cloudflare configuration is supplied, but no cloud account, bucket or deployment was
+created by the assistant. services/relay/wrangler.toml defaults uploads OFF and has
+no permitted production origin. It needs actual operator configuration:
+  * Provision the private neuron-encrypted-shares R2 bucket or change its real name.
+  * NEVER expose a public bucket URL that bypasses API expiry and deletion.
+  * Configure the SQLite Durable Object migration/binding and hourly cron.
+  * Set exact ALLOWED_ORIGINS for your actual app origin.
+  * Set a strong random >=32-character RATE_SALT using provider secret management.
+  * Set ENABLE_UPLOADS=true only after billing/abuse/retention safeguards and tests.
+  * Route SAME-ORIGIN /api/shares* to the Worker on the real application domain.
+  * Apply HTTPS, correct script MIME types and host-specific security headers.
+  * Use a reviewed Wrangler installation under Node 22.12+ to deploy intentionally.
+
+Local development allows localhost and HTTPS *.e2b.app preview origins; production
+DOES NOT inherit that preview wildcard. Do not deploy ENVIRONMENT=development.
+Do not deploy the original unrelated scaffold's infrastructure placeholders as if
+implemented. Static hosting alone does not provide R2, DOs, cron or API routing.
+See docs/sharing-protocol.md for exact API/framing/operational requirements.
+
+WHAT IS STILL OUTSIDE THIS PHASE
+---------------------------------
+No WebRTC/P2P, non-image training, worker-isolated training, independent test-set UI,
+continuous camera streaming, resumable training, encrypted dataset backups, universal
+device certification, complete accessibility/security/model-license audit, or cloud
+operations certification. Existing Phase 2 storage/backup limits remain unchanged.
+Training still uses real TFJS on the browser thread with async yields. No hosted AI
+API is substituted. Model scores are not calibrated probabilities or medical/safety
+assurances. Matching a tiny synthetic task is not real-world model validation.
+
+VERIFICATION ACTUALLY PERFORMED
+--------------------------------
+Combined original scaffold + applied Phase 1 + Phase 2 + these Phase 3 files:
+  pnpm install: passed across all 9 workspace projects.
+  pnpm typecheck: passed, including frontend and relay test sources.
+  pnpm test: 10 test files; 78 tests passed (62 frontend +16 relay).
+  pnpm build: browser production bundle AND actual Worker bundle passed.
+  pnpm audit: no known advisories reported at final check. Point-in-time only,
+              not proof that the code or deployment is secure.
+
+Toolchain: Node 22.23.4, pnpm 9.15.5, TypeScript 5.7.3, Vite 6.4.6,
+Vitest 4.1.12, Miniflare 4.20260730.0. Tested transitive overrides:
+undici 7.30.2, sharp 0.35.5. Earlier resolved tooling versions had advisories and
+were replaced before the final suite. Keep the overrides and generated lockfile.
+
+Relay tests execute real Worker/R2/DO runtime behavior, including ciphertext storage,
+wrong/correct deletion token, immediate expiry denial/removal, cleanup helper,
+foreign origins, unsupported TTL, malformed framing, oversized actual body, client
+rate limits, missing capability, malformed IDs and fail-closed production settings.
+The cron cleanup algorithm is exercised locally; provider cron scheduling is not a
+claimed deployed test. Expiry test installs an already-expired R2 record and tests
+actual API denial; it does not pretend to wait through an entire production TTL.
+
+Browser integration, real production frontend + running relay, two isolated Chromium
+browser contexts with software WebGL/SwiftShader:
+  - Restored a Phase 2 project containing an actually trained supported model.
+  - Sender consented and encrypted/uploaded through the UI to real local R2.
+  - Verified binary ciphertext framing and no plaintext model name in upload body.
+  - Exported a deletion receipt; raw deletion token was not sent in the upload.
+  - Recipient opened full link; key disappeared from visible URL; decrypted/validated.
+  - Imported into a new local project; weightData matched sender; ZERO samples copied.
+  - Downloaded the real verified encoder and ran actual model inference.
+  - Sender and recipient displayed matching predictions for the same input image.
+  - Wrong deletion token was rejected with 403.
+  - Removed only sender's local receipt, reimported exported receipt and recovered
+    early-revocation access without an account.
+  - Revoked through UI; subsequent original-link download failed with 404.
+  - Already-imported copy STILL predicted offline after remote revocation.
+  - Observed HTTP URLs contained neither encryption key nor deletion token.
+  - Desktop and 390px mobile management UI had no horizontal document overflow.
+  - No uncaught browser exceptions in that tested sharing workflow.
+
+Regression browser check under Phase 3 also passed the full Phase 2 workflow:
+  production offline-shell installation; actual pinned encoder verification; image
+  ingestion and duplicate rejection; networking OFF; cold-page real training for
+  3 epochs; inference; consented feedback approval; full backup and new-project
+  restore; restored-model offline inference; corrupted cached-shard detection.
+No phase was replaced by canned predictions, timer-based fake training, fake relay
+responses or claimed cloud deployments. These browser checks are smoke workflows,
+not exhaustive physical-device/GPU/power-loss/production load testing.
+
+Known build advisory: TensorFlow chunk is ~1.87 MB minified / ~303 KB gzip, above
+Vite's 500 KB warning threshold. Build succeeds. Do not hide this warning or claim
+performance certification. A dependency audit pass is not a security audit.
+
+MANUAL CHECKLIST FOR YOUR WINDOWS MACHINE
+------------------------------------------
+[ ] Upgrade Node to >=22.12 and restart terminal; confirm node --version.
+[ ] Back up/commit local changes, then apply all 40 numbered sections.
+[ ] pnpm install; typecheck; all 78 tests; browser/relay build; audit.
+[ ] Start relay in one terminal and web in a second. Check relay from Shares page.
+[ ] Confirm existing local projects persist at their ORIGINAL scheme/host/port.
+[ ] Train/save a model, choose explicit sharing consent and create a link.
+[ ] Download the deletion receipt before clearing storage or forgetting anything.
+[ ] Open the full link in another browser/profile. Inspect, then import as new.
+[ ] Install encoder if needed and predict on a real unseen image.
+[ ] Restore a saved deletion receipt; revoke; confirm original link fails afterward.
+[ ] Confirm received/imported models remain local after their source link is revoked.
+[ ] Verify key is absent from DevTools HTTP URLs and training images are not uploaded.
+[ ] Test a wrong key, tampered ciphertext, missing/expired/revoked link and stopped relay.
+[ ] Check camera permissions, keyboard/dialog focus, mobile and screen-reader behavior.
+[ ] Perform provider-specific provisioning/security/abuse/load review BEFORE publishing.
+
+FILE INDEX
+------------
+01. package.json [UPDATE IMPLEMENTED FILE]
+    Node 22 requirement, workspace web+relay scripts and tested dependency overrides.
+02. apps/web/package.json [UPDATE IMPLEMENTED FILE]
+    Browser application version/dependency manifest preserving prior features.
+03. apps/web/vite.config.ts [UPDATE IMPLEMENTED FILE]
+    Server-only same-origin relay proxy while preserving production offline build.
+04. apps/web/src/app/App.tsx [UPDATE IMPLEMENTED FILE]
+    Lazy receive/manage routes and Phase 3 styles.
+05. apps/web/src/pages/PredictPage.tsx [UPDATE IMPLEMENTED FILE]
+    Creates encrypted links for the actual selected saved model.
+06. apps/web/src/pages/SettingsPage.tsx [UPDATE IMPLEMENTED FILE]
+    Links to encrypted-sharing management without hiding network requirements.
+07. apps/web/src/pages/HomePage.tsx [UPDATE IMPLEMENTED FILE]
+    Accurate Phase 3 feature availability messaging.
+08. apps/web/src/components/layout/AppShell.tsx [UPDATE IMPLEMENTED FILE]
+    Navigation entry and Phase 3 workspace labeling.
+09. apps/web/src/pwa/service-worker.ts [UPDATE IMPLEMENTED FILE]
+    Explicit API prefix bypass so ciphertext is not app-shell cached.
+10. apps/web/index.html [UPDATE IMPLEMENTED FILE]
+    No-referrer document policy.
+11. apps/web/src/styles/phase3.css [NEW PATH]
+    Responsive link/receipt/recipient interface styles.
+12. .gitignore [UPDATE IMPLEMENTED FILE]
+    Keep local emulator data and sensitive receipt exports out of version control.
+13. apps/web/src/features/sharing/crypto.ts [NEW PATH]
+    Fresh AES-GCM keys/IVs, canonical secrets, authenticated envelopes.
+14. apps/web/src/features/sharing/share-format.ts [NEW PATH]
+    Whitelisted supported-model payload codec; rejects unrelated decrypted content.
+15. apps/web/src/features/sharing/share-links.ts [NEW PATH]
+    Fragment-only link construction and bounded canonical parsing.
+16. apps/web/src/features/sharing/relay-client.ts [NEW PATH]
+    Bounded same-origin relay calls, timeout/cancellation and actionable errors.
+17. apps/web/src/features/sharing/receipt.repository.ts [NEW PATH]
+    Isolated sensitive deletion-receipt storage/import; prevents conflicting overwrite.
+18. apps/web/src/features/sharing/sharing.service.ts [IMPLEMENT SCAFFOLD]
+    Actual create/receive/import/revoke orchestration and atomic new-project import.
+19. apps/web/src/features/sharing/LinkShareDialog.tsx [IMPLEMENT SCAFFOLD]
+    Explicit consent, lifetime selection, link creation and private receipt export.
+20. apps/web/src/pages/ReceivePage.tsx [IMPLEMENT SCAFFOLD]
+    Recipient download/decrypt/inspect/consented-import workflow.
+21. apps/web/src/pages/SharesPage.tsx [NEW PATH]
+    Local receipt management, recovery, revocation and explicit local-forget action.
+22. apps/web/src/test/sharing-crypto.test.ts [NEW PATH]
+    Six authenticated encryption, tampering and encoding tests.
+23. apps/web/src/test/sharing-format.test.ts [NEW PATH]
+    Six link/payload sanitization and supported-format tests.
+24. apps/web/src/test/sharing-storage.test.ts [NEW PATH]
+    Five receipt persistence, validation and overwrite-protection tests.
+25. apps/web/src/test/sharing-client.test.ts [NEW PATH]
+    Five relative-URL/header/error/bounded-client contract tests.
+26. services/relay/package.json [IMPLEMENT SCAFFOLD]
+    Real relay runtime/build/test dependencies and commands.
+27. services/relay/tsconfig.json [IMPLEMENT SCAFFOLD]
+    Strict Worker+Node typecheck including actual relay tests.
+28. services/relay/wrangler.toml [IMPLEMENT SCAFFOLD]
+    Fail-closed cloud Worker/R2/DO/cron deployment configuration.
+29. services/relay/scripts/dev.mjs [NEW PATH]
+    Cross-platform real Worker compilation and persistent local emulator startup.
+30. services/relay/src/config.ts [IMPLEMENT SCAFFOLD]
+    Worker entry, safe response boundary, cron handler and DO export.
+31. services/relay/src/lib/validation.ts [IMPLEMENT SCAFFOLD]
+    Actual API routing for health/upload/download/delete.
+32. services/relay/src/lib/object-store.ts [IMPLEMENT SCAFFOLD]
+    Environment, production secret/origin policy and secure response headers.
+33. services/relay/src/lib/rate-limit.ts [IMPLEMENT SCAFFOLD]
+    Streamed body bounds, framing, deletion capabilities and random references.
+34. services/relay/src/durable-objects/RateLimiter.ts [IMPLEMENT SCAFFOLD]
+    R2 ciphertext store, expiry denial, capability deletion and retention cleanup.
+35. services/relay/src/router.ts [IMPLEMENT SCAFFOLD]
+    Salted IP budget reservations through the actual Durable Object binding.
+36. services/relay/src/index.ts [IMPLEMENT SCAFFOLD]
+    Transactional fixed-hour client/global budget implementation.
+37. services/relay/vitest.config.ts [NEW PATH]
+    Sixteen real runtime, expiry, abuse-boundary and production safeguard tests.
+38. services/relay/test/relay.test.ts [NEW PATH]
+    Isolated actual-runtime relay test discovery/timeouts.
+39. docs/sharing-protocol.md [IMPLEMENT SCAFFOLD]
+    Protocol, privacy, API, deployment, cost/abuse and retention requirements.
+40. README.md [UPDATE IMPLEMENTED FILE]
+    Current combined-phase setup, feature boundaries and operating instructions.
+
+Each section below is the entire file. SHA-256 is over exact UTF-8/LF contents.
+Do not copy the checksum or marker lines into source files.
+
+===== BEGIN FILE 01/40: package.json =====
+SHA256: 5ec7a4248a1ef629f4c8d564833ea9528f813c204c0423ae2d4e60218fb7c9a9
+----- CONTENT START -----
+{
+  "name": "neuron",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.5",
+  "scripts": {
+    "dev": "pnpm --filter @neuron/web dev",
+    "build": "pnpm --filter @neuron/web build && pnpm --filter @neuron/relay build",
+    "test": "pnpm --filter @neuron/web test && pnpm --filter @neuron/relay test",
+    "typecheck": "pnpm --filter @neuron/web typecheck && pnpm --filter @neuron/relay typecheck",
+    "dev:relay": "pnpm --filter @neuron/relay dev"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "miniflare>undici": "7.30.2",
+      "miniflare>sharp": "0.35.5"
+    }
+  }
+}
+----- CONTENT END -----
+===== END FILE: package.json =====
+
+===== BEGIN FILE 02/40: apps/web/package.json =====
+SHA256: 06edd596c8b6dbc0253fb92192e327c04250505409b06a68848c2f541f422af5
+----- CONTENT START -----
+{
+  "name": "@neuron/web",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tensorflow-models/mobilenet": "2.1.1",
+    "@tensorflow/tfjs": "4.22.0",
+    "idb": "8.0.2",
+    "lucide-react": "0.468.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5",
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
+    "@vitejs/plugin-react": "4.3.4",
+    "typescript": "5.7.3",
+    "vite": "6.4.6",
+    "vitest": "4.1.12",
+    "fake-indexeddb": "6.2.4"
+  }
+}
+----- CONTENT END -----
+===== END FILE: apps/web/package.json =====
+
+===== BEGIN FILE 03/40: apps/web/vite.config.ts =====
+SHA256: 82066f8ef4a938251e9f2c7fc8cc38a044841158b4d250ccb3cdba6afee90782
+----- CONTENT START -----
+import { defineConfig, transformWithEsbuild, type Plugin } from "vite";
+import react from "@vitejs/plugin-react";
+import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+function offlineShell(): Plugin {
+  return {
+    name: "neuron-offline-shell",
+    apply: "build",
+    enforce: "post",
+    async generateBundle(_, bundle) {
+      const paths = [
+        "/offline.html",
+        "/favicon.svg",
+        "/manifest.webmanifest",
+        ...Object.keys(bundle)
+          .filter((p) => !p.endsWith(".map"))
+          .map((p) => "/" + p),
+      ].sort();
+      const workerTemplate = readFileSync(
+        new URL("./src/pwa/service-worker.ts", import.meta.url),
+        "utf8",
+      );
+      const publicRevision = [
+        "offline.html",
+        "favicon.svg",
+        "manifest.webmanifest",
+      ]
+        .map((name) =>
+          readFileSync(new URL("./public/" + name, import.meta.url), "utf8"),
+        )
+        .join("\n");
+      const revision = createHash("sha256")
+        .update(workerTemplate)
+        .update(publicRevision)
+        .update(paths.join("\n"))
+        .update(
+          String(
+            bundle["index.html"]?.type === "asset"
+              ? bundle["index.html"].source
+              : "",
+          ),
+        )
+        .digest("hex")
+        .slice(0, 16);
+      const source = readFileSync(
+        new URL("./src/pwa/service-worker.ts", import.meta.url),
+        "utf8",
+      )
+        .replace("__NEURON_PRECACHE__", JSON.stringify(paths))
+        .replace("__NEURON_REVISION__", revision);
+      const compiled = await transformWithEsbuild(source, "service-worker.ts", {
+        loader: "ts",
+        target: "es2022",
+        minify: true,
+      });
+      this.emitFile({
+        type: "asset",
+        fileName: "service-worker.js",
+        source: compiled.code,
+      });
+    },
+  };
+}
+const relayTarget = process.env.NEURON_RELAY_TARGET || "http://127.0.0.1:8787";
+const relayURL = new URL(relayTarget);
+if (
+  !["http:", "https:"].includes(relayURL.protocol) ||
+  relayURL.username ||
+  relayURL.password
+)
+  throw new Error("Invalid NEURON_RELAY_TARGET");
+const proxy = { "/api/shares": { target: relayTarget, changeOrigin: false } };
+export default defineConfig({
+  plugins: [react(), offlineShell()],
+  server: { host: "0.0.0.0", allowedHosts: [".e2b.app", "localhost"], proxy },
+  preview: { host: "0.0.0.0", allowedHosts: [".e2b.app", "localhost"], proxy },
+  build: {
+    target: "es2022",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("@tensorflow")) return "tensorflow";
+        },
+      },
+    },
+  },
+});
+----- CONTENT END -----
+===== END FILE: apps/web/vite.config.ts =====
+
+===== BEGIN FILE 04/40: apps/web/src/app/App.tsx =====
+SHA256: e753ef1a80bc2614f274d1204c23f97851e7823c2f5291852cb4f8a0fa76866c
+----- CONTENT START -----
+import { useEffect, useState, lazy, Suspense } from "react";
+import { AppShell } from "../components/layout/AppShell";
+import { HomePage } from "../pages/HomePage";
+import { ProjectsPage } from "../pages/ProjectsPage";
+import { ProjectPage } from "../pages/ProjectPage";
+const TrainingPage = lazy(() =>
+  import("../pages/TrainingPage").then((m) => ({ default: m.TrainingPage })),
+);
+const PredictPage = lazy(() =>
+  import("../pages/PredictPage").then((m) => ({ default: m.PredictPage })),
+);
+import { SettingsPage } from "../pages/SettingsPage";
+import { NotFoundPage } from "../pages/NotFoundPage";
+const EvolutionPage = lazy(() =>
+  import("../pages/EvolutionPage").then((m) => ({ default: m.EvolutionPage })),
+);
+import "../styles/phase3.css";
+const ReceivePage = lazy(() =>
+  import("../pages/ReceivePage").then((m) => ({ default: m.ReceivePage })),
+);
+const SharesPage = lazy(() =>
+  import("../pages/SharesPage").then((m) => ({ default: m.SharesPage })),
+);
+function currentRoute() {
+  return location.hash.slice(1) || "/";
+}
+export function App() {
+  const [route, setRoute] = useState(currentRoute);
+  useEffect(() => {
+    const update = () => {
+      setRoute(currentRoute());
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("hashchange", update);
+    return () => window.removeEventListener("hashchange", update);
+  }, []);
+  const match = route.match(
+    /^\/projects\/([^/]+)(?:\/(train|predict|evolve))?$/,
+  );
+  const received = route.match(
+    /^\/receive\/([A-Za-z0-9_-]{32})(?:\/([A-Za-z0-9_-]{43}))?$/,
+  );
+  let page;
+  if (route === "/") page = <HomePage />;
+  else if (route === "/projects") page = <ProjectsPage />;
+  else if (route === "/shares") page = <SharesPage />;
+  else if (received)
+    page = (
+      <ReceivePage
+        key={received[1]}
+        id={received[1]}
+        secret={received[2] ?? ""}
+      />
+    );
+  else if (route === "/settings") page = <SettingsPage />;
+  else if (match) {
+    const id = match[1];
+    page =
+      match[2] === "evolve" ? (
+        <EvolutionPage key={route} id={id} />
+      ) : match[2] === "train" ? (
+        <TrainingPage key={route} id={id} />
+      ) : match[2] === "predict" ? (
+        <PredictPage key={route} id={id} />
+      ) : (
+        <ProjectPage key={route} id={id} />
+      );
+  } else page = <NotFoundPage />;
+  return (
+    <AppShell route={route}>
+      <Suspense fallback={<p role="status">Loading image studio…</p>}>
+        {page}
+      </Suspense>
+    </AppShell>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/app/App.tsx =====
+
+===== BEGIN FILE 05/40: apps/web/src/pages/PredictPage.tsx =====
+SHA256: 096d466acbac6b0624324848af1ceb13c70ea8d1279c12b1f5263d2f6dd894b6
+----- CONTENT START -----
+import { useEffect, useRef, useState } from "react";
+import { Camera, Download, Image, RefreshCw } from "lucide-react";
+import { getProject, listVersions, activateVersion } from "../lib/db";
+import {
+  type Project,
+  type ModelVersion,
+  type Prediction,
+  errorMessage,
+} from "../lib/types";
+import { predictor } from "../features/inference/inference.service";
+import { normalizeImage } from "../features/datasets/dataset.service";
+import { exportModel } from "../lib/model-format";
+import { FeedbackCapture } from "../features/inference/FeedbackCapture";
+import { Button } from "../components/ui/Button";
+import { FileDropzone } from "../components/ui/FileDropzone";
+import { LinkShareDialog } from "../features/sharing/LinkShareDialog";
+export function PredictPage({ id }: { id: string }) {
+  const [shareOpen, setShareOpen] = useState(false);
+  const [project, setProject] = useState<Project | null>(null),
+    [versions, setVersions] = useState<ModelVersion[]>([]),
+    [selected, setSelected] = useState(""),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false),
+    [ready, setReady] = useState(false),
+    [results, setResults] = useState<Prediction[]>([]),
+    [preview, setPreview] = useState(""),
+    [camera, setCamera] = useState(false),
+    [latency, setLatency] = useState(0);
+  const [feedbackBlob, setFeedbackBlob] = useState<Blob | null>(null);
+  const engine = useRef<Awaited<ReturnType<typeof predictor>> | null>(null),
+    stream = useRef<MediaStream | null>(null),
+    video = useRef<HTMLVideoElement>(null),
+    alive = useRef(true),
+    inFlight = useRef(false);
+  useEffect(() => {
+    alive.current = true;
+    Promise.all([getProject(id), listVersions(id)])
+      .then(([p, v]) => {
+        if (!alive.current) return;
+        setProject(p ?? null);
+        setVersions(v);
+        setSelected(p?.activeVersionId ?? v[0]?.id ?? "");
+      })
+      .catch((e) => {
+        if (alive.current) setError(errorMessage(e));
+      });
+    return () => {
+      alive.current = false;
+      stream.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, [id]);
+  useEffect(() => {
+    if (!camera || !video.current || !stream.current) return;
+    video.current.srcObject = stream.current;
+    void video.current.play().catch((e) => setError(errorMessage(e)));
+  }, [camera]);
+  useEffect(() => {
+    let cancelled = false;
+    setReady(false);
+    setResults([]);
+    setFeedbackBlob(null);
+    const version = versions.find((v) => v.id === selected);
+    if (!version) return;
+    predictor(version.artifact)
+      .then((p) => {
+        if (cancelled) p.dispose();
+        else {
+          engine.current = p;
+          setReady(true);
+        }
+      })
+      .catch((e) => {
+        if (!cancelled) setError(errorMessage(e));
+      });
+    return () => {
+      cancelled = true;
+      engine.current?.dispose();
+      engine.current = null;
+    };
+  }, [selected, versions]);
+  useEffect(
+    () => () => {
+      if (preview) URL.revokeObjectURL(preview);
+    },
+    [preview],
+  );
+  async function predict(blob: Blob) {
+    if (!engine.current || inFlight.current) return;
+    inFlight.current = true;
+    setBusy(true);
+    setError("");
+    const start = performance.now();
+    try {
+      const result = await engine.current.predict(blob);
+      if (alive.current) {
+        setFeedbackBlob(blob);
+        setResults(result);
+        setLatency(performance.now() - start);
+        setPreview(URL.createObjectURL(blob));
+      }
+    } catch (e) {
+      if (alive.current) setError(errorMessage(e));
+    } finally {
+      inFlight.current = false;
+      if (alive.current) setBusy(false);
+    }
+  }
+  async function fromFile(files: File[]) {
+    if (!files[0] || inFlight.current) return;
+    setError("");
+    try {
+      await predict(await normalizeImage(files[0]));
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }
+  async function startCamera() {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia)
+        throw new Error(
+          "Camera requires HTTPS or localhost and browser camera support.",
+        );
+      const s = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 },
+        audio: false,
+      });
+      if (!alive.current) {
+        s.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      stream.current?.getTracks().forEach((t) => t.stop());
+      stream.current = s;
+      setCamera(true);
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }
+  function stopCamera() {
+    stream.current?.getTracks().forEach((t) => t.stop());
+    stream.current = null;
+    setCamera(false);
+  }
+  async function capture() {
+    const v = video.current;
+    if (!v || !v.videoWidth || busy) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = v.videoWidth;
+    canvas.height = v.videoHeight;
+    canvas.getContext("2d")!.drawImage(v, 0, 0);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.9),
+    );
+    if (blob) await predict(blob);
+  }
+  const version = versions.find((v) => v.id === selected);
+  return (
+    <>
+      <a className="back-link" href={`#/projects/${id}`}>
+        ← Dataset
+      </a>
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">03 / ACTIVATE YOUR IDEA</div>
+          <h1>Meet your model.</h1>
+          <p>
+            Test a new image or a camera frame. Predictions run on this device.
+          </p>
+        </div>
+        {version && (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              try {
+                exportModel(version.artifact, project?.name ?? "model");
+              } catch (e) {
+                setError(errorMessage(e));
+              }
+            }}
+          >
+            <Download size={16} /> Export model
+          </Button>
+        )}
+      </div>
+      <a className="small-link" href={`#/projects/${id}/evolve`}>
+        Feedback review, comparisons & version history →
+      </a>
+      {version && (
+        <div className="share-entry">
+          <Button variant="secondary" onClick={() => setShareOpen(true)}>
+            Create encrypted share link
+          </Button>
+          <a href="#/shares">Manage share links →</a>
+        </div>
+      )}
+      {shareOpen && version && project && (
+        <LinkShareDialog
+          project={project}
+          version={version}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+      {!versions.length ? (
+        <div className="empty-state">
+          <Image size={40} />
+          <h2>No saved model yet</h2>
+          <p>
+            Train your dataset first, or import a supported model in Settings.
+          </p>
+          <a className="btn btn-primary" href={`#/projects/${id}/train`}>
+            Go to training
+          </a>
+        </div>
+      ) : (
+        <>
+          <section className="panel version-bar">
+            <label className="field">
+              Model version
+              <select
+                disabled={busy}
+                value={selected}
+                onChange={(e) => setSelected(e.target.value)}
+              >
+                {versions.map((v, i) => (
+                  <option value={v.id} key={v.id}>
+                    Version {versions.length - i} ·{" "}
+                    {new Date(v.createdAt).toLocaleString()} ·{" "}
+                    {(v.artifact.evaluation.accuracy * 100).toFixed(1)}%
+                    validation
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Button
+              variant="secondary"
+              disabled={
+                busy || !project || selected === project.activeVersionId
+              }
+              onClick={() => {
+                if (!project) return;
+                void activateVersion(id, selected)
+                  .then(() =>
+                    setProject({ ...project, activeVersionId: selected }),
+                  )
+                  .catch((e) => setError(errorMessage(e)));
+              }}
+            >
+              Make active
+            </Button>
+          </section>
+          <div className="prediction-layout">
+            <section className="panel">
+              <h2>Give it something new</h2>
+              <FileDropzone
+                multiple={false}
+                disabled={!ready || busy}
+                onFiles={(files) => void fromFile(files)}
+              />
+              <div className="camera-actions">
+                {camera ? (
+                  <>
+                    <Button
+                      variant="secondary"
+                      disabled={busy || !ready}
+                      onClick={() => void capture()}
+                    >
+                      <Camera size={16} /> Predict this frame
+                    </Button>
+                    <Button variant="ghost" onClick={stopCamera}>
+                      Stop camera
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    onClick={() => void startCamera()}
+                  >
+                    <Camera size={16} /> Use camera
+                  </Button>
+                )}
+              </div>
+              {camera && (
+                <video
+                  className="camera-video"
+                  ref={video}
+                  autoPlay
+                  muted
+                  playsInline
+                  aria-label="Camera preview"
+                />
+              )}
+              {preview && !camera && (
+                <img
+                  className="prediction-image"
+                  src={preview}
+                  alt="Image being classified"
+                />
+              )}
+            </section>
+            <section className="panel">
+              <div className="section-heading">
+                <h2>Predictions</h2>
+                <span className="tag">
+                  {busy ? "PROCESSING" : ready ? "LOCAL INFERENCE" : "LOADING"}
+                </span>
+              </div>
+              {results.length ? (
+                <>
+                  <div className="prediction-winner">
+                    {results[0].label}
+                    <strong>{(results[0].score * 100).toFixed(1)}%</strong>
+                  </div>
+                  {results.map((r) => (
+                    <div className="prediction-row" key={r.label}>
+                      <div>
+                        <span>{r.label}</span>
+                        <strong>{(r.score * 100).toFixed(1)}%</strong>
+                      </div>
+                      <progress value={r.score} max={1} />
+                    </div>
+                  ))}
+                  <p className="phase-note">
+                    {Math.round(latency)} ms including feature extraction.
+                    Scores are relative softmax outputs, not calibrated
+                    probabilities or proof of correctness.
+                  </p>
+                </>
+              ) : (
+                <div className="empty-monitor">
+                  <RefreshCw size={34} />
+                  <p>
+                    {ready
+                      ? "Add an unseen image to see actual predictions."
+                      : "Loading the saved classifier…"}
+                  </p>
+                </div>
+              )}
+              <div className="notice">
+                No image is uploaded. The verified cached encoder works offline.
+                Camera frames are processed only when you choose “Predict this
+                frame”.
+              </div>
+              {feedbackBlob && project && version && results[0] && (
+                <FeedbackCapture
+                  key={preview}
+                  project={project}
+                  versionId={version.id}
+                  blob={feedbackBlob}
+                  predictedLabel={results[0].label}
+                />
+              )}
+            </section>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pages/PredictPage.tsx =====
+
+===== BEGIN FILE 06/40: apps/web/src/pages/SettingsPage.tsx =====
+SHA256: ade823a157c0771244889cb40b78caf985643370159d367eb200219ef8a918c1
+----- CONTENT START -----
+import { useEffect, useRef, useState } from "react";
+import { ShieldCheck, Upload, HardDrive } from "lucide-react";
+import { storageInfo, bytes, capabilities } from "../lib/capabilities";
+import { listProjects, importVersion } from "../lib/db";
+import { readModel } from "../lib/model-format";
+import { type Project, errorMessage, uid } from "../lib/types";
+import { RuntimeSettings } from "../features/settings/RuntimeSettings";
+import { BackupPanel } from "../features/settings/BackupPanel";
+import { Button } from "../components/ui/Button";
+export function SettingsPage() {
+  const [storage, setStorage] = useState<Awaited<
+      ReturnType<typeof storageInfo>
+    > | null>(null),
+    [projects, setProjects] = useState<Project[]>([]),
+    [selected, setSelected] = useState(""),
+    [error, setError] = useState(""),
+    [message, setMessage] = useState(""),
+    [busy, setBusy] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const support = capabilities();
+  useEffect(() => {
+    storageInfo()
+      .then(setStorage)
+      .catch((e) => setError(errorMessage(e)));
+    listProjects()
+      .then((p) => {
+        setProjects(p);
+        setSelected(p[0]?.id ?? "");
+      })
+      .catch((e) => setError(errorMessage(e)));
+  }, []);
+  async function importFile(file: File) {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const artifact = await readModel(file);
+      const p = projects.find((p) => p.id === selected);
+      if (!p) throw new Error("Create and select a project first.");
+      if (
+        !confirm(
+          `Import this model into “${p.name}”? Its class vocabulary will be replaced and all its existing training images deleted. Existing saved model versions remain available. Export does not restore images.`,
+        )
+      )
+        return;
+      await importVersion(p, {
+        id: uid(),
+        projectId: p.id,
+        artifact,
+        createdAt: Date.now(),
+      });
+      setMessage("Model imported. Open this project’s Predict page to use it.");
+      setProjects(await listProjects());
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">YOUR WORKSPACE, YOUR RULES</div>
+          <h1>Privacy & storage</h1>
+          <p>Understand what stays here—and what needs a backup.</p>
+        </div>
+        <ShieldCheck className="accent-icon" size={36} />
+      </div>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      {message && (
+        <p className="success" role="status">
+          {message}
+        </p>
+      )}
+      <section className="panel sharing-settings">
+        <h2>Encrypted model sharing</h2>
+        <p>
+          Create expiring links from a saved model’s Predict page. An optional
+          relay stores ciphertext—not your dataset. Keep the deletion receipt to
+          revoke a link before expiry.
+        </p>
+        <a className="btn btn-secondary" href="#/shares">
+          Manage encrypted links
+        </a>
+      </section>
+      <div className="settings-grid">
+        <RuntimeSettings />
+        <BackupPanel />
+        <section className="panel">
+          <h2>
+            <HardDrive size={20} /> Browser storage
+          </h2>
+          <div className="storage-number">
+            {storage ? bytes(storage.usage) : "…"}
+            <small> used by this origin</small>
+          </div>
+          <p className="muted">
+            Estimated quota: {storage ? bytes(storage.quota) : "…"}. Browser
+            estimates can change.
+          </p>
+          <p>
+            Persistence:{" "}
+            <strong>
+              {storage?.persistent ? "Granted" : "Not guaranteed"}
+            </strong>
+          </p>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              void (async () => {
+                try {
+                  const granted = await navigator.storage?.persist?.();
+                  setMessage(
+                    granted
+                      ? "Persistent storage granted. Still keep backups."
+                      : "Your browser did not grant persistence. Export important models.",
+                  );
+                  setStorage(await storageInfo());
+                } catch (e) {
+                  setError(errorMessage(e));
+                }
+              })()
+            }
+          >
+            Request persistent storage
+          </Button>
+          <p className="phase-note">
+            Clearing browser/site data deletes projects. Model exports do not
+            include training images. Use the full project backup panel to export
+            images and models together.
+          </p>
+        </section>
+        <section className="panel">
+          <h2>
+            <Upload size={20} /> Import a model
+          </h2>
+          <p className="muted">
+            Only validated NEURON image models exported by this phase. Maximum 8
+            MB. Arbitrary TensorFlow graphs or scripts are not accepted.
+          </p>
+          <label className="field">
+            Target project
+            <select
+              value={selected}
+              disabled={busy}
+              onChange={(e) => setSelected(e.target.value)}
+            >
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <input
+            ref={input}
+            hidden
+            type="file"
+            accept=".json,application/json"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void importFile(file);
+            }}
+          />
+          <Button
+            variant="secondary"
+            disabled={busy || !selected}
+            onClick={() => input.current?.click()}
+          >
+            <Upload size={16} />
+            {busy ? "Importing…" : "Choose model file"}
+          </Button>
+          {!projects.length && (
+            <p>
+              <a href="#/projects">Create a project first →</a>
+            </p>
+          )}
+        </section>
+        <section className="panel">
+          <h2>Device capabilities</h2>
+          <dl className="summary-list">
+            <div>
+              <dt>IndexedDB</dt>
+              <dd>{support.storage ? "Available" : "Unavailable"}</dd>
+            </div>
+            <div>
+              <dt>Camera API</dt>
+              <dd>{support.camera ? "Available" : "Unavailable"}</dd>
+            </div>
+            <div>
+              <dt>Secure context</dt>
+              <dd>{support.secure ? "Yes" : "No"}</dd>
+            </div>
+            <div>
+              <dt>WebGPU API</dt>
+              <dd>{support.webgpu ? "Detected (not used)" : "Not detected"}</dd>
+            </div>
+          </dl>
+          <p className="phase-note">
+            This phase trains with WebGL or CPU—not WebGPU. Detection is not a
+            certification of training performance.
+          </p>
+        </section>
+        <section className="panel">
+          <h2>The local-first promise</h2>
+          <ul className="privacy-list">
+            <li>No account or application backend for this workflow.</li>
+            <li>No analytics or sample uploads.</li>
+            <li>
+              Encoder weights download from Google-hosted model endpoints.
+            </li>
+            <li>Exporting a model is an explicit user action.</li>
+            <li>Private mode or storage eviction can remove local data.</li>
+            <li>
+              Offline reload requires an installed production shell and encoder
+              pack. Encrypted links require the optional sharing relay; they do
+              not work offline.
+            </li>
+          </ul>
+        </section>
+      </div>
+    </>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pages/SettingsPage.tsx =====
+
+===== BEGIN FILE 07/40: apps/web/src/pages/HomePage.tsx =====
+SHA256: 560f03a3de9f1a90a2abc93828ee8a550be2766f8c20846e71a711d4c959ef26
+----- CONTENT START -----
+import {
+  ArrowRight,
+  Image,
+  Type,
+  AudioLines,
+  Film,
+  Table2,
+  Shapes,
+  Database,
+  Layers,
+  ShieldCheck,
+  BrainCircuit,
+  Sparkles,
+  ChevronRight,
+} from "lucide-react";
+export function HomePage() {
+  return (
+    <>
+      <div className="eyebrow">
+        <span className="status-dot" /> YOUR IDEAS. NO LIMITS.
+      </div>
+      <section className="hero">
+        <div className="hero-copy">
+          <div className="pill">
+            <Sparkles size={13} /> PERSONAL AI, WITHOUT THE COMPLEXITY
+          </div>
+          <h1>
+            Create your own
+            <br />
+            <span className="gradient-text">AI model.</span>
+            <br />
+            Keep it yours.
+          </h1>
+          <p>
+            Turn your images into an intelligent model.
+            <br />
+            Train right in your browser, on your own device.
+            <br />
+            No coding. No accounts. No cloud training.
+          </p>
+          <div className="hero-actions">
+            <a className="btn btn-primary" href="#/projects">
+              Start building <ArrowRight size={17} />
+            </a>
+            <a className="text-link" href="#/settings">
+              How your data stays private <ChevronRight size={15} />
+            </a>
+          </div>
+          <div className="hero-trust">
+            <ShieldCheck size={15} />
+            <span>Your images never leave your browser</span>
+          </div>
+        </div>
+        <div className="hero-art" aria-hidden="true">
+          <div className="orb orb-one" />
+          <div className="orb orb-two" />
+          <div className="floating-chip chip-image">
+            <Image size={25} />
+          </div>
+          <div className="floating-chip chip-brain">
+            <BrainCircuit size={25} />
+          </div>
+          <div className="studio-preview">
+            <div className="window-bar">
+              <i />
+              <i />
+              <i />
+              <span>NEURON STUDIO</span>
+              <span className="preview-local">● LOCAL</span>
+            </div>
+            <div className="preview-body">
+              <div className="preview-side">
+                <BrainCircuit size={24} />
+                <span className="on">
+                  01 <b>Choose data</b>
+                </span>
+                <span>
+                  02 <b>Train model</b>
+                </span>
+                <span>
+                  03 <b>Make it yours</b>
+                </span>
+                <div className="preview-lock">
+                  <ShieldCheck size={16} />
+                  On your device
+                </div>
+              </div>
+              <div className="preview-main">
+                <small>LET’S BUILD SOMETHING</small>
+                <h3>What will your model learn?</h3>
+                <p>Every great model starts with your data.</p>
+                <div className="preview-tiles">
+                  {[
+                    { icon: Image, name: "Images" },
+                    { icon: Type, name: "Text" },
+                    { icon: AudioLines, name: "Audio" },
+                    { icon: Film, name: "Video" },
+                    { icon: Table2, name: "Tabular" },
+                    { icon: Shapes, name: "Custom" },
+                  ].map((item, i) => (
+                    <div className={i === 0 ? "selected" : ""} key={item.name}>
+                      <item.icon size={21} />
+                      <span>{item.name}</span>
+                      {i > 0 && <em>Later phase</em>}
+                    </div>
+                  ))}
+                </div>
+                <div className="preview-button">
+                  Continue with images <ArrowRight size={13} />
+                </div>
+              </div>
+            </div>
+          </div>
+          <span className="handwritten">
+            Your next idea,
+            <br />
+            made intelligent.
+          </span>
+        </div>
+      </section>
+      <section className="principles">
+        {[
+          {
+            icon: Database,
+            title: "Bring your data",
+            text: "Organize images into the classes you want your model to recognize.",
+          },
+          {
+            icon: Layers,
+            title: "Train on your device",
+            text: "Real transfer learning. Your hardware does the work, not a cloud server.",
+          },
+          {
+            icon: BrainCircuit,
+            title: "Make it useful",
+            text: "Test predictions, compare versions, and export your trained model.",
+          },
+          {
+            icon: ShieldCheck,
+            title: "Stay in control",
+            text: "No logins. No image uploads. Your browser is your workspace.",
+          },
+        ].map((item) => (
+          <article key={item.title}>
+            <div className="feature-icon">
+              <item.icon size={21} />
+            </div>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </article>
+        ))}
+      </section>
+      <section className="start-banner">
+        <div className="banner-icon">
+          <Sparkles size={24} />
+        </div>
+        <div>
+          <span className="eyebrow">A SIMPLE PLACE TO START</span>
+          <h2>
+            Image classification.{" "}
+            <span className="muted">Real possibilities.</span>
+          </h2>
+          <p>
+            Teach a model to tell your categories apart. Build something
+            uniquely yours.
+          </p>
+        </div>
+        <a className="btn btn-secondary" href="#/projects">
+          Create a project <ArrowRight size={16} />
+        </a>
+      </section>
+      <p className="phase-note">
+        Phase 03 · Image classification, offline packs, backups and reviewed
+        feedback are available. Encrypted model links require the optional
+        relay. Other data types remain planned.
+      </p>
+    </>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pages/HomePage.tsx =====
+
+===== BEGIN FILE 08/40: apps/web/src/components/layout/AppShell.tsx =====
+SHA256: cb6cd673dfcd494f8c6781a8da12e926e0e43e5065052ee3db15fd1e0dbd99a0
+----- CONTENT START -----
+import { type ReactNode } from "react";
+import { OfflineBanner } from "./OfflineBanner";
+import {
+  BrainCircuit,
+  LayoutDashboard,
+  FolderOpen,
+  Settings,
+  ShieldCheck,
+  ArrowUpRight,
+} from "lucide-react";
+export function AppShell({
+  children,
+  route,
+}: {
+  children: ReactNode;
+  route: string;
+}) {
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <a className="brand" href="#/">
+          <BrainCircuit size={37} />
+          <span>
+            NEURON<small>YOUR AI. YOUR DEVICE.</small>
+          </span>
+        </a>
+        <div className="nav-label">WORKSPACE</div>
+        <nav aria-label="Main navigation">
+          {[
+            {
+              href: "#/",
+              name: "Overview",
+              icon: LayoutDashboard,
+              active: route === "/",
+            },
+            {
+              href: "#/projects",
+              name: "My projects",
+              icon: FolderOpen,
+              active: route.startsWith("/project"),
+            },
+            {
+              href: "#/settings",
+              name: "Settings & storage",
+              icon: Settings,
+              active: route === "/settings",
+            },
+          ].map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className={item.active ? "active" : ""}
+            >
+              <item.icon size={19} />
+              {item.name}
+              {item.active && <span className="nav-dot" />}
+            </a>
+          ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="privacy-note">
+            <ShieldCheck size={22} />
+            <strong>Private by design</strong>
+            <p>Your images stay on your device. No account needed.</p>
+          </div>
+          <a className="small-link" href="#/settings">
+            Manage local storage <ArrowUpRight size={14} />
+          </a>
+          <a className="small-link" href="#/shares">
+            Encrypted share links →
+          </a>
+          <div className="build-label">NEURON / PHASE 03</div>
+        </div>
+      </aside>
+      <div className="workspace">
+        <header className="topbar">
+          <span>
+            Workspace <span className="muted">/</span>{" "}
+            <strong>
+              {route === "/"
+                ? "Overview"
+                : route === "/projects"
+                  ? "Projects"
+                  : route === "/settings"
+                    ? "Settings"
+                    : "Image studio"}
+            </strong>
+          </span>
+          <span className="local-badge">
+            <span className="status-dot" /> Local-first workspace
+          </span>
+        </header>
+        <OfflineBanner />
+        <main className="main-content">{children}</main>
+        <footer className="footer">
+          <span>Built on your ideas. Powered by your device.</span>
+          <span>BUILD · TRAIN · EVOLVE</span>
+        </footer>
+      </div>
+    </div>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/components/layout/AppShell.tsx =====
+
+===== BEGIN FILE 09/40: apps/web/src/pwa/service-worker.ts =====
+SHA256: 6d0036b2ffb513a94fde4d071ef9bdb5691caa637fe84100e6ef043ab6b81c3c
+----- CONTENT START -----
+/// <reference lib="webworker" />
+export {};
+const worker = globalThis as unknown as ServiceWorkerGlobalScope;
+// Replaced by the production Vite plugin, never evaluated dynamically.
+const ASSETS: string[] = __NEURON_PRECACHE__;
+const CACHE = "neuron-shell-__NEURON_REVISION__";
+declare const __NEURON_PRECACHE__: string[];
+worker.addEventListener("install", (event) => {
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE);
+      try {
+        await cache.addAll(
+          ASSETS.map((path) => new Request(path, { cache: "reload" })),
+        );
+      } catch (e) {
+        await caches.delete(CACHE);
+        throw e;
+      }
+      // Do not skipWaiting: an existing tab must explicitly authorize the update.
+    })(),
+  );
+});
+worker.addEventListener("activate", (event) =>
+  event.waitUntil(
+    (async () => {
+      // Keep prior shell caches. Existing tabs may still reference old lazy chunks.
+      // Their explicit cleanup is a later feature, not a destructive automatic action.
+      await worker.clients.claim();
+    })(),
+  ),
+);
+worker.addEventListener("message", (event) => {
+  if (event.data?.type === "ACTIVATE_UPDATE")
+    event.waitUntil(worker.skipWaiting());
+});
+worker.addEventListener("fetch", (event) => {
+  const request = event.request,
+    url = new URL(request.url);
+  if (url.pathname.startsWith("/api/shares")) return;
+  if (request.method !== "GET" || url.origin !== worker.location.origin) return;
+  if (request.mode === "navigate") {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE);
+        return (
+          (await cache.match("/index.html")) ??
+          (await cache.match("/offline.html")) ??
+          new Response("Offline app unavailable.", { status: 503 })
+        );
+      })(),
+    );
+    return;
+  }
+  if (
+    ASSETS.includes(url.pathname) ||
+    /^\/assets\/[^/]+\.(js|css)$/.test(url.pathname)
+  )
+    event.respondWith(
+      (async () => {
+        const current = await caches.open(CACHE);
+        const hit = await current.match(url.pathname);
+        if (hit) return hit;
+        // A previous tab can still reference a previous content-hashed lazy chunk.
+        for (const name of await caches.keys()) {
+          if (name === CACHE || !name.startsWith("neuron-shell-")) continue;
+          const cached = await (await caches.open(name)).match(url.pathname);
+          if (cached) return cached;
+        }
+        return fetch(request);
+      })(),
+    );
+});
+----- CONTENT END -----
+===== END FILE: apps/web/src/pwa/service-worker.ts =====
+
+===== BEGIN FILE 10/40: apps/web/index.html =====
+SHA256: ff70cf81b35771e3dcb539d829d9d2fa561557c53874e5f88e9484d87f5f1514
+----- CONTENT START -----
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#080d19" />
+    <meta
+      name="description"
+      content="NEURON: train your own image classifier privately in your browser."
+    />
+    <title>NEURON — Your AI. Your device.</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+----- CONTENT END -----
+===== END FILE: apps/web/index.html =====
+
+===== BEGIN FILE 11/40: apps/web/src/styles/phase3.css =====
+SHA256: f7283963ca834139c13b0e524cff06d102fc55c1e9b084d9feffbaa6b22a04b8
+----- CONTENT START -----
+.share-entry {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin: 0 0 24px;
+}
+.share-entry a {
+  font-size: 12px;
+  color: #ad99e8;
+}
+.share-dialog {
+  max-width: 100%;
+}
+.share-dialog p,
+.receive-panel p,
+.share-card p {
+  font-size: 12px;
+  color: #a3b6d1;
+}
+.secret-input {
+  width: 100%;
+  background: #091321;
+  color: #d5e3fb;
+  padding: 12px;
+  border: 1px solid #374d72;
+  border-radius: 8px;
+  font:
+    12px ui-monospace,
+    monospace;
+  overflow-wrap: anywhere;
+}
+.share-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+.sharing-settings {
+  margin: 0 0 24px;
+}
+.share-card {
+  margin: 20px 0;
+  border: 1px solid #304363;
+  padding: 22px;
+  border-radius: 12px;
+  background: #0d1728;
+}
+.share-card h3 {
+  overflow-wrap: anywhere;
+}
+.share-details {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.share-details dt {
+  color: #889dbc;
+}
+.share-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.receive-panel {
+  max-width: 780px;
+  margin: 20px auto;
+}
+.share-status {
+  border: 1px solid #58458c;
+  color: #c2a7fa;
+  padding: 7px 10px;
+  font-size: 10px;
+  border-radius: 15px;
+}
+.share-warning {
+  border-left: 3px solid #a77aef;
+  padding: 12px 16px;
+  background: #5e43871f;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #c2b2de;
+}
+.share-health {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 22px 0;
+}
+.receive-panel .field input {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+.share-dialog .btn {
+  white-space: normal;
+}
+.share-card .secret-input {
+  margin: 12px 0;
+}
+@media (max-width: 650px) {
+  .share-details {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  .share-details dd {
+    margin-bottom: 12px;
+  }
+  .share-health .btn {
+    white-space: normal;
+  }
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/styles/phase3.css =====
+
+===== BEGIN FILE 12/40: .gitignore =====
+SHA256: 189f417c0cc0fd47a215b040fc713b3ddc26016297652de2432f67b897e0aa09
+----- CONTENT START -----
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+coverage/
+playwright-report/
+test-results/
+.DS_Store
+*.local
+
+# Local relay data is ciphertext and still must not be committed.
+.local/
+.dev.vars
+.wrangler/
+*.neuron-share-receipt.json
+----- CONTENT END -----
+===== END FILE: .gitignore =====
+
+===== BEGIN FILE 13/40: apps/web/src/features/sharing/crypto.ts =====
+SHA256: 1d7df4cf9877f9ac0bfb0c140a61c964dfe60ef1b0f13ec4b42fa6e1ed43a1cf
+----- CONTENT START -----
+const MAGIC = new Uint8Array([78, 82, 78, 1]);
+const AAD = new TextEncoder().encode("NEURON-MODEL-SHARE:v1");
+export const MAX_CIPHER_BYTES = 8 * 1024 * 1024 + 64;
+export function base64url(bytes: Uint8Array) {
+  let raw = "";
+  for (let i = 0; i < bytes.length; i += 8192)
+    raw += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return btoa(raw).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+export function unbase64url(value: string, bytes: number) {
+  if (
+    !/^[A-Za-z0-9_-]+$/.test(value) ||
+    value.length !== Math.ceil((bytes * 4) / 3)
+  )
+    throw new Error("Invalid secret encoding.");
+  let raw: string;
+  try {
+    raw = atob(
+      value.replace(/-/g, "+").replace(/_/g, "/") +
+        "=".repeat((4 - (value.length % 4)) % 4),
+    );
+  } catch {
+    throw new Error("Invalid secret encoding.");
+  }
+  const data = Uint8Array.from(raw, (c) => c.charCodeAt(0));
+  if (data.length !== bytes || base64url(data) !== value)
+    throw new Error("Noncanonical secret encoding.");
+  return data;
+}
+export function randomSecret() {
+  return base64url(crypto.getRandomValues(new Uint8Array(32)));
+}
+export async function secretHash(value: string) {
+  unbase64url(value, 32);
+  const bytes = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return Array.from(new Uint8Array(bytes), (b) =>
+    b.toString(16).padStart(2, "0"),
+  ).join("");
+}
+export async function encryptModel(plaintext: Uint8Array) {
+  if (plaintext.length > MAX_CIPHER_BYTES - 32)
+    throw new Error("Model is too large to share.");
+  const secret = randomSecret(),
+    iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await crypto.subtle.importKey(
+    "raw",
+    unbase64url(secret, 32),
+    { name: "AES-GCM" },
+    false,
+    ["encrypt"],
+  );
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv, additionalData: AAD, tagLength: 128 },
+    key,
+    plaintext as BufferSource,
+  );
+  const output = new Uint8Array(16 + encrypted.byteLength);
+  output.set(MAGIC);
+  output.set(iv, 4);
+  output.set(new Uint8Array(encrypted), 16);
+  return { secret, bytes: output };
+}
+export async function decryptModel(envelope: Uint8Array, secret: string) {
+  if (
+    envelope.length < 33 ||
+    envelope.length > MAX_CIPHER_BYTES ||
+    !MAGIC.every((b, i) => envelope[i] === b)
+  )
+    throw new Error("Invalid encrypted model envelope.");
+  const key = await crypto.subtle.importKey(
+    "raw",
+    unbase64url(secret, 32),
+    { name: "AES-GCM" },
+    false,
+    ["decrypt"],
+  );
+  try {
+    return new Uint8Array(
+      await crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv: envelope.slice(4, 16),
+          additionalData: AAD,
+          tagLength: 128,
+        },
+        key,
+        envelope.slice(16),
+      ),
+    );
+  } catch {
+    throw new Error(
+      "Cannot decrypt this model. The key is incorrect or the encrypted file was altered.",
+    );
+  }
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/sharing/crypto.ts =====
+
+===== BEGIN FILE 14/40: apps/web/src/features/sharing/share-format.ts =====
+SHA256: 5e4d0595e1536bd40aa0b033bd79362b7ee1a3903d0791879a36bfc2522a7fb0
+----- CONTENT START -----
+import { validateArtifact } from "../../lib/model-format";
+import type { ModelArtifact } from "../../lib/types";
+export type SharedModel = {
+  format: "neuron-shared-model";
+  version: 1;
+  name: string;
+  artifact: ModelArtifact;
+};
+export function shareableArtifact(value: unknown): ModelArtifact {
+  const a = validateArtifact(value);
+  // Whitelist fields. Unknown fields in an imported model must not hitchhike into shares.
+  return {
+    format: a.format,
+    version: a.version,
+    encoder: a.encoder,
+    embeddingSize: a.embeddingSize,
+    labels: a.labels.map((l) => ({ id: l.id, name: l.name })),
+    weightSpecs: a.weightSpecs.map((s) => ({
+      name: s.name,
+      shape: [...s.shape],
+      dtype: s.dtype,
+    })),
+    weightData: a.weightData,
+    epochs: a.epochs.map((e) => ({
+      epoch: e.epoch,
+      loss: e.loss,
+      accuracy: e.accuracy,
+      valLoss: e.valLoss,
+      valAccuracy: e.valAccuracy,
+    })),
+    evaluation: {
+      accuracy: a.evaluation.accuracy,
+      total: a.evaluation.total,
+      matrix: a.evaluation.matrix.map((row) => [...row]),
+    },
+    createdAt: a.createdAt,
+    ...(a.provenance
+      ? {
+          provenance: {
+            datasetHash: a.provenance.datasetHash,
+            validationHash: a.provenance.validationHash,
+            seed: a.provenance.seed,
+            sampleCount: a.provenance.sampleCount,
+          },
+        }
+      : {}),
+  };
+}
+export function encodeShared(name: string, artifact: ModelArtifact) {
+  if (!name.trim() || name.length > 64) throw new Error("Invalid model name.");
+  const payload: SharedModel = {
+    format: "neuron-shared-model",
+    version: 1,
+    name: name.trim(),
+    artifact: shareableArtifact(artifact),
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+  if (bytes.length > 8 * 1024 * 1024)
+    throw new Error("Model exceeds the 8 MB sharing limit.");
+  return bytes;
+}
+export function decodeShared(bytes: Uint8Array): SharedModel {
+  if (bytes.length > 8 * 1024 * 1024)
+    throw new Error("Shared model exceeds the size limit.");
+  let value: SharedModel;
+  try {
+    value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+  } catch {
+    throw new Error("Decrypted model is not valid UTF-8 JSON.");
+  }
+  if (
+    !value ||
+    value.format !== "neuron-shared-model" ||
+    value.version !== 1 ||
+    typeof value.name !== "string" ||
+    !value.name.trim() ||
+    value.name.length > 64
+  )
+    throw new Error("Unsupported shared model format.");
+  return {
+    format: "neuron-shared-model",
+    version: 1,
+    name: value.name,
+    artifact: shareableArtifact(value.artifact),
+  };
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/sharing/share-format.ts =====
+
+===== BEGIN FILE 15/40: apps/web/src/features/sharing/share-links.ts =====
+SHA256: 8b83e3b13f1d5368f07b99635c1344f56be9a770ec93b2b728ab4d9c66f09e12
+----- CONTENT START -----
+import { unbase64url } from "./crypto";
+export const validShareId = (id: string) => /^[A-Za-z0-9_-]{32}$/.test(id);
+export function shareLink(origin: string, id: string, secret: string) {
+  if (!validShareId(id)) throw new Error("Invalid share reference.");
+  unbase64url(secret, 32);
+  const url = new URL(origin);
+  if (!["https:", "http:"].includes(url.protocol) || url.origin !== origin)
+    throw new Error("Invalid application origin.");
+  return `${origin}/#/receive/${id}/${secret}`;
+}
+export function parseShareLink(value: string) {
+  const url = new URL(value);
+  const match = url.hash.match(
+    /^#\/receive\/([A-Za-z0-9_-]{32})\/([A-Za-z0-9_-]{43})$/,
+  );
+  if (
+    !match ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.pathname !== "/" ||
+    !["https:", "http:"].includes(url.protocol)
+  )
+    throw new Error("Invalid NEURON share link.");
+  unbase64url(match[2], 32);
+  return { id: match[1], secret: match[2], origin: url.origin };
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/sharing/share-links.ts =====
+
+===== BEGIN FILE 16/40: apps/web/src/features/sharing/relay-client.ts =====
+SHA256: 1f7c1042f7c28ca9932841c8609385ec4c505b6f08f331a1a1f4ccb7cfb809ff
+----- CONTENT START -----
+import { MAX_CIPHER_BYTES } from "./crypto";
+import { validShareId } from "./share-links";
+export type RelayHealth = {
+  service: "neuron-encrypted-relay";
+  version: 1;
+  uploadsEnabled: boolean;
+  maxBytes: number;
+  maxTtlSeconds: number;
+};
+async function bounded(response: Response, limit: number) {
+  if (!response.body) throw new Error("Relay returned an empty response.");
+  const reader = response.body.getReader(),
+    chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > limit) {
+        await reader.cancel();
+        throw new Error("Relay response exceeds the safety limit.");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const result = new Uint8Array(size);
+  let i = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, i);
+    i += chunk.length;
+  }
+  return result;
+}
+async function request(
+  path: string,
+  options: RequestInit = {},
+  signal?: AbortSignal,
+) {
+  let response: Response;
+  try {
+    response = await fetch("/api/shares" + path, {
+      ...options,
+      credentials: "omit",
+      cache: "no-store",
+      redirect: "error",
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(60000)])
+        : AbortSignal.timeout(60000),
+    });
+  } catch (e) {
+    if (signal?.aborted)
+      throw new DOMException("Sharing cancelled.", "AbortError");
+    throw new Error(
+      "Sharing relay is unreachable. Start pnpm dev:relay or configure a same-origin /api/shares route. " +
+        (e instanceof Error ? e.message : ""),
+    );
+  }
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const data = JSON.parse(
+        new TextDecoder().decode(await bounded(response, 8192)),
+      );
+      if (typeof data.error === "string") detail = data.error.slice(0, 300);
+    } catch {
+      /* never display untrusted HTML */
+    }
+    throw new Error(
+      `Relay ${response.status}: ${detail || (response.status >= 500 ? "Sharing relay unavailable. Start pnpm dev:relay or check same-origin routing." : "request failed")}`,
+    );
+  }
+  return response;
+}
+export async function relayHealth(signal?: AbortSignal): Promise<RelayHealth> {
+  const data = JSON.parse(
+    new TextDecoder().decode(
+      await bounded(await request("/health", {}, signal), 8192),
+    ),
+  );
+  if (
+    data.service !== "neuron-encrypted-relay" ||
+    data.version !== 1 ||
+    typeof data.uploadsEnabled !== "boolean" ||
+    !Number.isInteger(data.maxBytes) ||
+    !Number.isInteger(data.maxTtlSeconds)
+  )
+    throw new Error("Incompatible sharing relay.");
+  return data;
+}
+export async function uploadEncrypted(
+  bytes: Uint8Array,
+  deleteHash: string,
+  ttl: number,
+  signal: AbortSignal,
+) {
+  if (
+    bytes.length > MAX_CIPHER_BYTES ||
+    !/^[a-f0-9]{64}$/.test(deleteHash) ||
+    ![60, 900, 3600, 86400].includes(ttl)
+  )
+    throw new Error("Invalid upload parameters.");
+  const response = await request(
+    "",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "X-Neuron-Client": "1",
+        "X-Neuron-Delete-Hash": deleteHash,
+        "X-Neuron-TTL": String(ttl),
+      },
+      body: bytes as BodyInit,
+    },
+    signal,
+  );
+  const result = JSON.parse(
+    new TextDecoder().decode(await bounded(response, 8192)),
+  );
+  if (
+    !validShareId(result.id ?? "") ||
+    !Number.isFinite(result.expiresAt) ||
+    result.expiresAt <= 0
+  )
+    throw new Error("Relay returned invalid share metadata.");
+  return result as { id: string; expiresAt: number };
+}
+export async function downloadEncrypted(id: string, signal: AbortSignal) {
+  if (!validShareId(id)) throw new Error("Invalid share reference.");
+  return bounded(await request("/" + id, {}, signal), MAX_CIPHER_BYTES);
+}
+export async function revokeEncrypted(
+  id: string,
+  token: string,
+  signal?: AbortSignal,
+) {
+  if (!validShareId(id) || !/^[A-Za-z0-9_-]{43}$/.test(token))
+    throw new Error("Invalid deletion capability.");
+  await request(
+    "/" + id,
+    {
+      method: "DELETE",
+      headers: { "X-Neuron-Client": "1", Authorization: "Bearer " + token },
+    },
+    signal,
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/sharing/relay-client.ts =====
+
+===== BEGIN FILE 17/40: apps/web/src/features/sharing/receipt.repository.ts =====
+SHA256: c90131ba4cc88ea156ff46589b5ac5e7cfe3be6b60636853a368a3a005f8dcfa
+----- CONTENT START -----
+import { openDB } from "idb";
+import { parseShareLink, validShareId } from "./share-links";
+import { unbase64url } from "./crypto";
+export type ShareReceipt = {
+  format: "neuron-share-receipt";
+  version: 1;
+  id: string;
+  projectId: string;
+  versionId: string;
+  name: string;
+  createdAt: number;
+  expiresAt: number;
+  deleteToken: string;
+  link: string;
+};
+const db = () =>
+  openDB("neuron-sharing", 1, {
+    upgrade(database) {
+      database.createObjectStore("receipts", { keyPath: "id" });
+    },
+  });
+export function validateReceipt(value: unknown): ShareReceipt {
+  const r = value as ShareReceipt;
+  if (
+    !r ||
+    r.format !== "neuron-share-receipt" ||
+    r.version !== 1 ||
+    !validShareId(r.id ?? "") ||
+    typeof r.projectId !== "string" ||
+    r.projectId.length > 100 ||
+    typeof r.versionId !== "string" ||
+    r.versionId.length > 100 ||
+    typeof r.name !== "string" ||
+    !r.name.trim() ||
+    r.name.length > 64 ||
+    !Number.isFinite(r.createdAt) ||
+    !Number.isFinite(r.expiresAt) ||
+    r.expiresAt <= r.createdAt ||
+    typeof r.link !== "string" ||
+    r.link.length > 2048
+  )
+    throw new Error("Invalid share receipt.");
+  unbase64url(r.deleteToken, 32);
+  if (parseShareLink(r.link).id !== r.id)
+    throw new Error("Receipt link does not match its reference.");
+  return structuredClone(r);
+}
+export async function saveReceipt(receipt: ShareReceipt) {
+  const database = await db();
+  try {
+    const safe = validateReceipt(receipt);
+    const tx = database.transaction("receipts", "readwrite");
+    void tx.done.catch(() => {});
+    const existing = await tx.store.get(safe.id);
+    if (
+      existing &&
+      (existing.link !== safe.link || existing.deleteToken !== safe.deleteToken)
+    ) {
+      tx.abort();
+      await tx.done.catch(() => {});
+      throw new Error(
+        "A conflicting receipt already exists. Existing access/deletion capabilities were not replaced.",
+      );
+    }
+    await tx.store.put(safe);
+    await tx.done;
+  } finally {
+    database.close();
+  }
+}
+export async function listReceipts(): Promise<ShareReceipt[]> {
+  const database = await db();
+  try {
+    return (await database.getAll("receipts"))
+      .map(validateReceipt)
+      .sort((a, b) => b.createdAt - a.createdAt);
+  } finally {
+    database.close();
+  }
+}
+export async function forgetReceipt(id: string) {
+  const database = await db();
+  try {
+    await database.delete("receipts", id);
+  } finally {
+    database.close();
+  }
+}
+export async function importReceipt(file: File, origin: string) {
+  if (file.size > 16384) throw new Error("Receipt exceeds the 16 KB limit.");
+  const receipt = validateReceipt(JSON.parse(await file.text()));
+  if (parseShareLink(receipt.link).origin !== origin)
+    throw new Error(
+      "This receipt belongs to another application origin. Open that origin to manage it.",
+    );
+  await saveReceipt(receipt);
+  return receipt;
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/sharing/receipt.repository.ts =====
+
+===== BEGIN FILE 18/40: apps/web/src/features/sharing/sharing.service.ts =====
+SHA256: d1021f31ee449ce7948286d30d24ded7730403f6d67e5ff44ed42bcc03d53a67
+----- CONTENT START -----
+import { randomSecret, secretHash, encryptModel, decryptModel } from "./crypto";
+import { encodeShared, decodeShared, type SharedModel } from "./share-format";
+import { shareLink, parseShareLink } from "./share-links";
+import {
+  uploadEncrypted,
+  downloadEncrypted,
+  revokeEncrypted,
+} from "./relay-client";
+import {
+  saveReceipt,
+  forgetReceipt,
+  type ShareReceipt,
+} from "./receipt.repository";
+import { runActivity } from "../../pwa/update-manager";
+import { database, trackTransaction } from "../../lib/db";
+import { uid, type Project, type ModelVersion } from "../../lib/types";
+export async function createShare(
+  project: Project,
+  version: ModelVersion,
+  ttl: number,
+  origin: string,
+  signal: AbortSignal,
+) {
+  return runActivity(async () => {
+    if (version.projectId !== project.id)
+      throw new Error("Model does not belong to this project.");
+    const token = randomSecret(),
+      encoded = encodeShared(project.name, version.artifact),
+      encrypted = await encryptModel(encoded);
+    signal.throwIfAborted();
+    const remote = await uploadEncrypted(
+      encrypted.bytes,
+      await secretHash(token),
+      ttl,
+      signal,
+    );
+    const receipt: ShareReceipt = {
+      format: "neuron-share-receipt",
+      version: 1,
+      id: remote.id,
+      projectId: project.id,
+      versionId: version.id,
+      name: project.name,
+      createdAt: remote.expiresAt - ttl * 1000,
+      expiresAt: remote.expiresAt,
+      deleteToken: token,
+      link: shareLink(origin, remote.id, encrypted.secret),
+    };
+    let persisted = true;
+    try {
+      await saveReceipt(receipt);
+    } catch {
+      persisted = false;
+    }
+    return { receipt, persisted };
+  });
+}
+export async function receiveShare(
+  id: string,
+  secret: string,
+  signal: AbortSignal,
+) {
+  return runActivity(async () =>
+    decodeShared(
+      await decryptModel(await downloadEncrypted(id, signal), secret),
+    ),
+  );
+}
+export async function importReceived(model: SharedModel) {
+  return runActivity(async () => {
+    const safe = decodeShared(encodeShared(model.name, model.artifact)),
+      now = Date.now(),
+      project: Project = {
+        id: uid(),
+        name: safe.name,
+        labels: safe.artifact.labels,
+        createdAt: now,
+        updatedAt: now,
+      },
+      version: ModelVersion = {
+        id: uid(),
+        projectId: project.id,
+        artifact: safe.artifact,
+        createdAt: now,
+      };
+    project.activeVersionId = version.id;
+    const db = await database(),
+      tx = trackTransaction(
+        db.transaction(["projects", "versions"], "readwrite"),
+      );
+    await tx.objectStore("projects").add(project);
+    await tx.objectStore("versions").add(version);
+    await tx.done;
+    return project;
+  });
+}
+export async function revokeShare(receipt: ShareReceipt, origin: string) {
+  if (parseShareLink(receipt.link).origin !== origin)
+    throw new Error(
+      "Manage this receipt from its original application origin.",
+    );
+  return runActivity(async () => {
+    await revokeEncrypted(receipt.id, receipt.deleteToken);
+    await forgetReceipt(receipt.id);
+  });
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/sharing/sharing.service.ts =====
+
+===== BEGIN FILE 19/40: apps/web/src/features/sharing/LinkShareDialog.tsx =====
+SHA256: d5c2840ff5697f3048df1c688b5699a7ecc1c8645db70b945554f88cd0240dfa
+----- CONTENT START -----
+import { useEffect, useRef, useState } from "react";
+import type { Project, ModelVersion } from "../../lib/types";
+import { errorMessage } from "../../lib/types";
+import { Dialog } from "../../components/ui/Dialog";
+import { Button } from "../../components/ui/Button";
+import { createShare } from "./sharing.service";
+import { relayHealth } from "./relay-client";
+import type { ShareReceipt } from "./receipt.repository";
+import { downloadBlob } from "../../lib/download";
+export function LinkShareDialog({
+  project,
+  version,
+  onClose,
+}: {
+  project: Project;
+  version: ModelVersion;
+  onClose: () => void;
+}) {
+  const [consent, setConsent] = useState(false),
+    [ttl, setTtl] = useState(3600),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(""),
+    [ready, setReady] = useState(false),
+    [receipt, setReceipt] = useState<ShareReceipt | null>(null),
+    [persisted, setPersisted] = useState(true),
+    [copied, setCopied] = useState(false);
+  const abort = useRef<AbortController | null>(null),
+    lock = useRef(false);
+  useEffect(() => {
+    const c = new AbortController();
+    relayHealth(c.signal)
+      .then((h) => {
+        setReady(h.uploadsEnabled);
+        if (!h.uploadsEnabled)
+          setError("Relay uploads are disabled by the operator.");
+      })
+      .catch((e) => {
+        if (!c.signal.aborted) setError(errorMessage(e));
+      });
+    return () => {
+      c.abort();
+      abort.current?.abort();
+    };
+  }, []);
+  async function create() {
+    if (lock.current) return;
+    lock.current = true;
+    setBusy(true);
+    setError("");
+    const c = new AbortController();
+    abort.current = c;
+    try {
+      const result = await createShare(
+        project,
+        version,
+        ttl,
+        location.origin,
+        c.signal,
+      );
+      setReceipt(result.receipt);
+      setPersisted(result.persisted);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      lock.current = false;
+      setBusy(false);
+    }
+  }
+  return (
+    <Dialog
+      title="Share an encrypted model"
+      onClose={() => {
+        if (!busy) onClose();
+      }}
+    >
+      <div className="share-dialog">
+        {receipt ? (
+          <>
+            <p>
+              The encrypted model is available until{" "}
+              {new Date(receipt.expiresAt).toLocaleString()}. Anyone with the
+              full link can decrypt it. Treat the link as a secret.
+            </p>
+            <label className="field">
+              Share link
+              <input
+                className="secret-input"
+                readOnly
+                value={receipt.link}
+                onFocus={(e) => e.target.select()}
+              />
+            </label>
+            <div className="share-actions">
+              <Button
+                onClick={() => {
+                  if (!navigator.clipboard) {
+                    setError("Select and copy the link manually.");
+                    return;
+                  }
+                  void navigator.clipboard
+                    .writeText(receipt.link)
+                    .then(() => setCopied(true))
+                    .catch(() =>
+                      setError(
+                        "Clipboard access denied. Select and copy the link manually.",
+                      ),
+                    );
+                }}
+              >
+                {copied ? "Copied" : "Copy link"}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  downloadBlob(
+                    new Blob([JSON.stringify(receipt)], {
+                      type: "application/json",
+                    }),
+                    "neuron.neuron-share-receipt.json",
+                  )
+                }
+              >
+                Download deletion receipt
+              </Button>
+            </div>
+            {!persisted && (
+              <p role="alert" className="error">
+                The receipt could not be saved locally. Download it NOW to
+                retain the deletion token. Expiry still applies.
+              </p>
+            )}
+            <p className="share-warning">
+              The receipt contains BOTH the link and a separate deletion secret.
+              Keep it private. Full project backups do not include these
+              receipts. Revocation cannot erase copies already downloaded.
+            </p>
+            <a className="small-link" href="#/shares" onClick={onClose}>
+              Manage links →
+            </a>
+          </>
+        ) : (
+          <>
+            <p>
+              Only the selected model, labels and preprocessing settings are
+              encrypted and uploaded. Your project images and feedback are not
+              included. The relay sees connection metadata, ciphertext size and
+              expiry—not the decryption key.
+            </p>
+            <label className="field">
+              Link lifetime
+              <select
+                value={ttl}
+                disabled={busy}
+                onChange={(e) => setTtl(Number(e.target.value))}
+              >
+                <option value={900}>15 minutes</option>
+                <option value={3600}>1 hour</option>
+                <option value={86400}>24 hours</option>
+              </select>
+            </label>
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={consent}
+                disabled={busy}
+                onChange={(e) => setConsent(e.target.checked)}
+              />{" "}
+              I approve uploading this encrypted model. I understand a trained
+              model may reveal information about its training data.
+            </label>
+            <Button
+              disabled={!consent || busy || !ready}
+              onClick={() => void create()}
+            >
+              {busy ? "Encrypting / uploading…" : "Create share link"}
+            </Button>
+            {busy && (
+              <Button variant="ghost" onClick={() => abort.current?.abort()}>
+                Cancel
+              </Button>
+            )}
+            <p className="phase-note">
+              Online relay required. If cancelled after the server receives an
+              upload, an unconfirmed encrypted object may remain until expiry.
+              Your training dataset is never uploaded by this workflow.
+            </p>
+          </>
+        )}
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    </Dialog>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/features/sharing/LinkShareDialog.tsx =====
+
+===== BEGIN FILE 20/40: apps/web/src/pages/ReceivePage.tsx =====
+SHA256: dc456559f12ed5e673eca15501b1463e155226d801ea9340e4c2e1b02354700a
+----- CONTENT START -----
+import { useEffect, useRef, useState } from "react";
+import {
+  receiveShare,
+  importReceived,
+} from "../features/sharing/sharing.service";
+import type { SharedModel } from "../features/sharing/share-format";
+import { errorMessage } from "../lib/types";
+import { Button } from "../components/ui/Button";
+export function ReceivePage({ id, secret }: { id: string; secret: string }) {
+  const [key, setKey] = useState(secret),
+    [consent, setConsent] = useState(false),
+    [model, setModel] = useState<SharedModel | null>(null),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  const abort = useRef<AbortController | null>(null),
+    lock = useRef(false);
+  useEffect(() => {
+    if (secret) {
+      setKey(secret);
+      setModel(null);
+      setError("");
+    }
+    if (secret)
+      history.replaceState(
+        null,
+        "",
+        location.pathname + location.search + "#/receive/" + id,
+      );
+    return () => abort.current?.abort();
+  }, [id, secret]);
+  async function inspect() {
+    if (lock.current) return;
+    lock.current = true;
+    setBusy(true);
+    setError("");
+    const c = new AbortController();
+    abort.current = c;
+    try {
+      setModel(await receiveShare(id, key, c.signal));
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      lock.current = false;
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="panel receive-panel">
+      <div className="eyebrow">ENCRYPTED MODEL TRANSFER</div>
+      <h1>A model, shared with you.</h1>
+      <p>
+        No account needed. Download ciphertext and decrypt it locally, then
+        choose whether to import the validated model. No dataset is included.
+      </p>
+      <p className="share-warning">
+        Only open models from people you trust. Imported weights are schema/size
+        checked and cannot supply executable graph code, but predictions may be
+        wrong or harmful. The relay still sees your connection metadata.
+      </p>
+      {!model ? (
+        <>
+          <label className="field">
+            Decryption key
+            <input
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              maxLength={43}
+            />
+          </label>
+          <p className="phase-note">
+            The incoming key was removed from the visible address bar and kept
+            in memory. Keep the original secret link if you need to reopen it;
+            reloading this page clears the key.
+          </p>
+          <Button
+            disabled={busy || key.length !== 43}
+            onClick={() => void inspect()}
+          >
+            {busy ? "Downloading / decrypting…" : "Inspect shared model"}
+          </Button>
+          {busy && (
+            <Button variant="ghost" onClick={() => abort.current?.abort()}>
+              Cancel
+            </Button>
+          )}
+        </>
+      ) : (
+        <>
+          <dl className="share-details">
+            <dt>Name</dt>
+            <dd>{model.name}</dd>
+            <dt>Type</dt>
+            <dd>Image classifier · MobileNet v2</dd>
+            <dt>Classes</dt>
+            <dd>{model.artifact.labels.map((l) => l.name).join(", ")}</dd>
+            <dt>Validation</dt>
+            <dd>
+              {(model.artifact.evaluation.accuracy * 100).toFixed(1)}% on{" "}
+              {model.artifact.evaluation.total} images (sender-provided, not
+              independently verified)
+            </dd>
+          </dl>
+          <label className="check-label">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+            />{" "}
+            Import this model as a NEW local project. Do not overwrite my
+            existing projects.
+          </label>
+          <Button
+            disabled={!consent || busy}
+            onClick={() => {
+              setBusy(true);
+              void importReceived(model)
+                .then((p) => {
+                  location.hash = "/projects/" + p.id + "/predict";
+                })
+                .catch((e) => {
+                  setError(errorMessage(e));
+                  setBusy(false);
+                });
+            }}
+          >
+            Import as new project
+          </Button>
+          <p className="phase-note">
+            Predictions need a verified local encoder pack. If missing, install
+            it in Settings. A received model has no training images; add your
+            own before retraining.
+          </p>
+        </>
+      )}
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+    </section>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pages/ReceivePage.tsx =====
+
+===== BEGIN FILE 21/40: apps/web/src/pages/SharesPage.tsx =====
+SHA256: c4d3d7d6120ba010309abffcb0614cf37b89eee7611857901aaaa786e9e37f6d
+----- CONTENT START -----
+import { useEffect, useRef, useState } from "react";
+import {
+  listReceipts,
+  forgetReceipt,
+  importReceipt,
+  type ShareReceipt,
+} from "../features/sharing/receipt.repository";
+import { revokeShare } from "../features/sharing/sharing.service";
+import { relayHealth } from "../features/sharing/relay-client";
+import { Button } from "../components/ui/Button";
+import { errorMessage } from "../lib/types";
+import { downloadBlob } from "../lib/download";
+export function SharesPage() {
+  const [items, setItems] = useState<ShareReceipt[]>([]),
+    [error, setError] = useState(""),
+    [message, setMessage] = useState(""),
+    [health, setHealth] = useState("Not checked"),
+    [busy, setBusy] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const refresh = async () => setItems(await listReceipts());
+  useEffect(() => {
+    void refresh().catch((e) => setError(errorMessage(e)));
+  }, []);
+  async function task(fn: () => Promise<unknown>) {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await fn();
+      await refresh();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">OPTIONAL ONLINE DISTRIBUTION</div>
+          <h1>Encrypted share links</h1>
+          <p>
+            Local deletion receipts give you control without an account. Expiry
+            is enforced by the relay.
+          </p>
+        </div>
+        <a className="btn btn-secondary" href="#/projects">
+          Choose a project
+        </a>
+      </div>
+      <div className="share-health">
+        <span className="share-status">Relay: {health}</span>
+        <Button
+          variant="secondary"
+          disabled={busy}
+          onClick={() =>
+            void task(async () => {
+              const h = await relayHealth();
+              setHealth(h.uploadsEnabled ? "Available" : "Uploads disabled");
+            })
+          }
+        >
+          Check relay
+        </Button>
+        <Button
+          variant="secondary"
+          disabled={busy}
+          onClick={() => input.current?.click()}
+        >
+          Import deletion receipt
+        </Button>
+      </div>
+      <input
+        ref={input}
+        type="file"
+        hidden
+        accept=".json,application/json"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file)
+            void task(async () => {
+              await importReceipt(file, location.origin);
+              setMessage("Receipt imported.");
+            });
+        }}
+      />
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      {message && (
+        <p className="success" role="status">
+          {message}
+        </p>
+      )}
+      <p className="share-warning">
+        Receipts contain sensitive access and deletion capabilities. They are
+        stored separately from projects and are not included in project backups.
+        Deleting a project does not revoke its links. Forgetting a receipt does
+        not delete the remote object. Download receipts before clearing browser
+        storage.
+      </p>
+      {!items.length && (
+        <div className="empty-state">
+          <h2>No saved share receipts</h2>
+          <p>
+            Open a trained model’s Predict page and choose Create encrypted
+            share link.
+          </p>
+        </div>
+      )}
+      {items.map((r) => (
+        <article className="share-card" key={r.id}>
+          <div className="section-heading">
+            <h3>{r.name}</h3>
+            <span className="share-status">
+              {r.expiresAt <= Date.now() ? "Expired" : "Expiring link"}
+            </span>
+          </div>
+          <p>
+            Expires {new Date(r.expiresAt).toLocaleString()}. Reference: {r.id}
+          </p>
+          <input
+            className="secret-input"
+            aria-label={`Share link for ${r.name}`}
+            value={r.link}
+            readOnly
+            onFocus={(e) => e.target.select()}
+          />
+          <div className="share-actions">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (!navigator.clipboard) {
+                  setError("Select and copy the link manually.");
+                  return;
+                }
+                void navigator.clipboard
+                  .writeText(r.link)
+                  .then(() => setMessage("Link copied."))
+                  .catch(() =>
+                    setError("Clipboard denied. Select and copy manually."),
+                  );
+              }}
+            >
+              Copy link
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                downloadBlob(
+                  new Blob([JSON.stringify(r)], { type: "application/json" }),
+                  "neuron.neuron-share-receipt.json",
+                )
+              }
+            >
+              Download receipt
+            </Button>
+            <Button
+              variant="danger"
+              disabled={busy}
+              onClick={() => {
+                if (
+                  confirm(
+                    "Revoke this remote encrypted model? Already downloaded copies cannot be removed.",
+                  )
+                )
+                  void task(async () => {
+                    await revokeShare(r, location.origin);
+                    setMessage(
+                      "Remote link revoked and local receipt removed.",
+                    );
+                  });
+              }}
+            >
+              Revoke remote link
+            </Button>
+            <Button
+              variant="ghost"
+              disabled={busy}
+              onClick={() => {
+                if (
+                  confirm(
+                    "Forget the LOCAL receipt only? This does NOT revoke the remote model. You may lose early-deletion access.",
+                  )
+                )
+                  void task(() => forgetReceipt(r.id));
+              }}
+            >
+              Forget local receipt
+            </Button>
+          </div>
+        </article>
+      ))}
+    </>
+  );
+}
+----- CONTENT END -----
+===== END FILE: apps/web/src/pages/SharesPage.tsx =====
+
+===== BEGIN FILE 22/40: apps/web/src/test/sharing-crypto.test.ts =====
+SHA256: f90b6a9fc9a70da17019eb63084b3adb45fff2af1278582e918255ff73ab3141
+----- CONTENT START -----
+import { describe, it, expect } from "vitest";
+import {
+  encryptModel,
+  decryptModel,
+  randomSecret,
+  secretHash,
+  base64url,
+  unbase64url,
+} from "../features/sharing/crypto";
+describe("authenticated model encryption", () => {
+  it("roundtrips bytes with a fresh key and IV", async () => {
+    const bytes = new TextEncoder().encode("sensitive weights");
+    const a = await encryptModel(bytes),
+      b = await encryptModel(bytes);
+    expect(a.secret).not.toBe(b.secret);
+    expect(a.bytes).not.toEqual(b.bytes);
+    expect(await decryptModel(a.bytes, a.secret)).toEqual(bytes);
+  });
+  it("rejects wrong keys", async () => {
+    const a = await encryptModel(new Uint8Array([1]));
+    await expect(decryptModel(a.bytes, randomSecret())).rejects.toThrow(
+      "Cannot decrypt",
+    );
+  });
+  it("rejects authenticated ciphertext tampering", async () => {
+    const a = await encryptModel(new Uint8Array([1]));
+    a.bytes[a.bytes.length - 1] ^= 1;
+    await expect(decryptModel(a.bytes, a.secret)).rejects.toThrow("altered");
+  });
+  it("rejects version/magic tampering", async () => {
+    const a = await encryptModel(new Uint8Array([1]));
+    a.bytes[3] = 2;
+    await expect(decryptModel(a.bytes, a.secret)).rejects.toThrow("envelope");
+  });
+  it("validates canonical key encodings", () => {
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    expect(unbase64url(base64url(bytes), 32)).toEqual(bytes);
+    expect(() => unbase64url("a".repeat(43), 32)).toThrow();
+  });
+  it("hashes deletion tokens deterministically without returning the token", async () => {
+    const token = randomSecret();
+    expect(await secretHash(token)).toMatch(/^[a-f0-9]{64}$/);
+    expect(await secretHash(token)).toBe(await secretHash(token));
+  });
+});
+----- CONTENT END -----
+===== END FILE: apps/web/src/test/sharing-crypto.test.ts =====
+
+===== BEGIN FILE 23/40: apps/web/src/test/sharing-format.test.ts =====
+SHA256: 4dbe1ec8af27d11ebd519f9d9d59d83e7b0032f3bab8a3307ed61d3b404bc611
+----- CONTENT START -----
+import { describe, it, expect } from "vitest";
+import { shareLink, parseShareLink } from "../features/sharing/share-links";
+import { randomSecret } from "../features/sharing/crypto";
+import {
+  encodeShared,
+  decodeShared,
+  shareableArtifact,
+} from "../features/sharing/share-format";
+import { toBase64 } from "../lib/model-format";
+import type { ModelArtifact } from "../lib/types";
+function model(): ModelArtifact {
+  return {
+    format: "neuron-image",
+    version: 1,
+    encoder: "mobilenet-v2-1.0",
+    embeddingSize: 1280,
+    labels: [
+      { id: "a", name: "A" },
+      { id: "b", name: "B" },
+    ],
+    weightSpecs: [
+      { name: "head_0", shape: [1280, 2], dtype: "float32" },
+      { name: "head_1", shape: [2], dtype: "float32" },
+    ],
+    weightData: toBase64(new Float32Array(2562).buffer),
+    epochs: [],
+    evaluation: {
+      accuracy: 1,
+      total: 2,
+      matrix: [
+        [1, 0],
+        [0, 1],
+      ],
+    },
+    createdAt: 1,
+  };
+}
+describe("share format and secret links", () => {
+  it("places the encryption key exclusively in the fragment", () => {
+    const key = randomSecret(),
+      url = shareLink("https://neuron.example", "x".repeat(32), key);
+    expect(new URL(url).pathname).toBe("/");
+    expect(new URL(url).search).toBe("");
+    expect(parseShareLink(url)).toEqual({
+      id: "x".repeat(32),
+      secret: key,
+      origin: "https://neuron.example",
+    });
+  });
+  it("rejects query-bearing or malformed links", () => {
+    expect(() =>
+      parseShareLink("https://neuron.example/?key=secret"),
+    ).toThrow();
+    expect(() =>
+      shareLink("https://neuron.example/path", "x".repeat(32), randomSecret()),
+    ).toThrow();
+  });
+  it("round trips a real bounded weight artifact", () => {
+    const m = model();
+    expect(decodeShared(encodeShared("Plants", m)).artifact).toEqual(m);
+  });
+  it("strips hidden datasets and unknown fields from imported artifacts", () => {
+    const m = {
+      ...model(),
+      samples: ["private image"],
+      secret: "not part of model",
+    };
+    expect(shareableArtifact(m)).not.toHaveProperty("samples");
+    expect(shareableArtifact(m)).not.toHaveProperty("secret");
+  });
+  it("rejects non-model encrypted payloads after decryption", () =>
+    expect(() =>
+      decodeShared(new TextEncoder().encode('{"format":"code"}')),
+    ).toThrow());
+  it("rejects oversized names", () =>
+    expect(() => encodeShared("x".repeat(65), model())).toThrow());
+});
+----- CONTENT END -----
+===== END FILE: apps/web/src/test/sharing-format.test.ts =====
+
+===== BEGIN FILE 24/40: apps/web/src/test/sharing-storage.test.ts =====
+SHA256: 3d976464da80058211a930a3a4cd7283f6202718723463ad2a1db5bbccca5c7f
+----- CONTENT START -----
+import "fake-indexeddb/auto";
+import { describe, it, expect, afterEach } from "vitest";
+import { deleteDB } from "idb";
+import { randomSecret } from "../features/sharing/crypto";
+import { shareLink } from "../features/sharing/share-links";
+import {
+  saveReceipt,
+  listReceipts,
+  forgetReceipt,
+  validateReceipt,
+  type ShareReceipt,
+} from "../features/sharing/receipt.repository";
+function receipt(): ShareReceipt {
+  return {
+    format: "neuron-share-receipt",
+    version: 1,
+    id: "x".repeat(32),
+    name: "Plants",
+    projectId: "p",
+    versionId: "v",
+    createdAt: 1,
+    expiresAt: 2,
+    deleteToken: randomSecret(),
+    link: shareLink("https://neuron.example", "x".repeat(32), randomSecret()),
+  };
+}
+afterEach(async () => {
+  await deleteDB("neuron-sharing");
+});
+describe("independent deletion receipts", () => {
+  it("does not overwrite an existing capability with a conflicting receipt", async () => {
+    const r = receipt();
+    await saveReceipt(r);
+    await expect(
+      saveReceipt({ ...r, deleteToken: randomSecret() }),
+    ).rejects.toThrow("conflicting");
+    expect(await listReceipts()).toEqual([r]);
+  });
+  it("persists and forgets local capabilities", async () => {
+    const r = receipt();
+    await saveReceipt(r);
+    expect(await listReceipts()).toEqual([r]);
+    await forgetReceipt(r.id);
+    expect(await listReceipts()).toEqual([]);
+  });
+  it("rejects mismatched link references", () => {
+    const r = receipt();
+    r.id = "y".repeat(32);
+    expect(() => validateReceipt(r)).toThrow("match");
+  });
+  it("rejects invalid deletion secrets", () => {
+    const r = receipt();
+    r.deleteToken = "short";
+    expect(() => validateReceipt(r)).toThrow();
+  });
+  it("rejects incoherent expiry", () => {
+    const r = receipt();
+    r.expiresAt = 0;
+    expect(() => validateReceipt(r)).toThrow();
+  });
+});
+----- CONTENT END -----
+===== END FILE: apps/web/src/test/sharing-storage.test.ts =====
+
+===== BEGIN FILE 25/40: apps/web/src/test/sharing-client.test.ts =====
+SHA256: 112f53990102503bb6430be5aca5a82080cfd060b9d3c3fdb938c9f5f10ad755
+----- CONTENT START -----
+import { afterEach, describe, it, expect, vi } from "vitest";
+import {
+  relayHealth,
+  downloadEncrypted,
+  uploadEncrypted,
+  revokeEncrypted,
+} from "../features/sharing/relay-client";
+afterEach(() => vi.unstubAllGlobals());
+describe("bounded same-origin relay client", () => {
+  it("uses relative URLs and never sends an encryption key", async () => {
+    const fetcher = vi.fn(
+      async (_url: RequestInfo | URL, _options?: RequestInit) =>
+        new Response(new Uint8Array([1, 2, 3])),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    await downloadEncrypted("a".repeat(32), new AbortController().signal);
+    expect(fetcher.mock.calls[0][0]).toBe("/api/shares/" + "a".repeat(32));
+    const options = fetcher.mock.calls[0][1] as RequestInit;
+    expect(options.credentials).toBe("omit");
+    expect(options.cache).toBe("no-store");
+  });
+  it("returns actionable relay errors", async () => {
+    vi.stubGlobal(
+      "fetch",
+      async () => new Response('{"error":"Expired share"}', { status: 410 }),
+    );
+    await expect(
+      downloadEncrypted("a".repeat(32), new AbortController().signal),
+    ).rejects.toThrow("410: Expired");
+  });
+  it("rejects HTML masquerading as a health endpoint", async () => {
+    vi.stubGlobal("fetch", async () => new Response('{"service":"other"}'));
+    await expect(relayHealth()).rejects.toThrow("Incompatible");
+  });
+  it("rejects a malformed upload before networking", async () => {
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    await expect(
+      uploadEncrypted(
+        new Uint8Array(1),
+        "bad",
+        3600,
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow("Invalid upload");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it("puts deletion capabilities in authorization headers, not URLs", async () => {
+    const fetcher = vi.fn(
+      async (_url: RequestInfo | URL, _options?: RequestInit) =>
+        new Response(null, { status: 204 }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    await revokeEncrypted("a".repeat(32), "b".repeat(43));
+    expect(fetcher.mock.calls[0][0]).not.toContain("b".repeat(43));
+    expect((fetcher.mock.calls[0][1] as RequestInit).headers).toEqual({
+      "X-Neuron-Client": "1",
+      Authorization: "Bearer " + "b".repeat(43),
+    });
+  });
+});
+----- CONTENT END -----
+===== END FILE: apps/web/src/test/sharing-client.test.ts =====
+
+===== BEGIN FILE 26/40: services/relay/package.json =====
+SHA256: f26bca5d56d4c9fc57b60a0a61d8af229951b1e88887609760ac678c8e2b449f
+----- CONTENT START -----
+{
+  "name": "@neuron/relay",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "tsc --noEmit && node scripts/dev.mjs --build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261110.1",
+    "@types/node": "22.10.5",
+    "esbuild": "0.25.12",
+    "miniflare": "4.20260730.0",
+    "typescript": "5.7.3",
+    "vitest": "4.1.12"
+  }
+}
+----- CONTENT END -----
+===== END FILE: services/relay/package.json =====
+
+===== BEGIN FILE 27/40: services/relay/tsconfig.json =====
+SHA256: bf581892ee5d8cf763a6ead111b3d065a730e39f63c97a12f5294799e2d40309
+----- CONTENT START -----
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types", "node"]
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}
+----- CONTENT END -----
+===== END FILE: services/relay/tsconfig.json =====
+
+===== BEGIN FILE 28/40: services/relay/wrangler.toml =====
+SHA256: 799c50ef4fea86893fe349fc18d81bd420f38e6eab42fe869e47eb72a1b1c6c0
+----- CONTENT START -----
+name = "neuron-encrypted-relay"
+main = "src/index.ts"
+compatibility_date = "2026-07-01"
+
+# Production fails closed until the operator explicitly configures these values.
+[vars]
+ENVIRONMENT = "production"
+ENABLE_UPLOADS = "false"
+ALLOWED_ORIGINS = ""
+
+[[r2_buckets]]
+binding = "SHARES"
+bucket_name = "neuron-encrypted-shares"
+
+[[durable_objects.bindings]]
+name = "LIMITER"
+class_name = "RateLimiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RateLimiter"]
+
+[triggers]
+crons = ["17 * * * *"]
+
+# Set RATE_SALT using the provider's secret manager, not this file.
+# Configure a SAME-ORIGIN route /api/shares* on your real application domain.
+----- CONTENT END -----
+===== END FILE: services/relay/wrangler.toml =====
+
+===== BEGIN FILE 29/40: services/relay/scripts/dev.mjs =====
+SHA256: 94d108ad0c0e869dc235054991e1b0fea9986cf63f640944dd7fc6a7bbb2e2f8
+----- CONTENT START -----
+import { build } from "esbuild";
+import { Miniflare } from "miniflare";
+import { mkdir, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+const root = fileURLToPath(new URL("../", import.meta.url));
+const result = await build({
+  entryPoints: [root + "src/index.ts"],
+  bundle: true,
+  write: false,
+  format: "esm",
+  platform: "browser",
+  target: "es2022",
+});
+const script = result.outputFiles[0].text;
+if (process.argv.includes("--build")) {
+  await mkdir(root + "build", { recursive: true });
+  await writeFile(root + "build/worker.mjs", script);
+  console.log("Relay Worker bundle built. Cloud deployment is NOT performed.");
+} else {
+  const port = Number(process.env.NEURON_RELAY_PORT || 8787);
+  if (!Number.isInteger(port) || port < 1024 || port > 65535)
+    throw new Error("Invalid NEURON_RELAY_PORT");
+  const mf = new Miniflare({
+    modules: true,
+    script,
+    compatibilityDate: "2026-07-01",
+    host: "0.0.0.0",
+    port,
+    r2Buckets: ["SHARES"],
+    r2Persist: root + ".local/relay-r2",
+    durableObjects: { LIMITER: { className: "RateLimiter", useSQLite: true } },
+    durableObjectsPersist: root + ".local/relay-do",
+    bindings: {
+      ENVIRONMENT: "development",
+      ENABLE_UPLOADS: "true",
+      ALLOWED_ORIGINS:
+        "http://localhost:5173,http://localhost:4173,http://localhost:4174",
+      RATE_SALT: "local-development-only-not-a-production-secret",
+    },
+  });
+  const url = await mf.ready;
+  console.log(
+    "NEURON encrypted relay ready at " +
+      url +
+      " — DEVELOPMENT ONLY. Restart after changing relay source.",
+  );
+  for (const signal of ["SIGINT", "SIGTERM"])
+    process.on(signal, () => void mf.dispose().then(() => process.exit(0)));
+}
+----- CONTENT END -----
+===== END FILE: services/relay/scripts/dev.mjs =====
+
+===== BEGIN FILE 30/40: services/relay/src/config.ts =====
+SHA256: ba1d2da4917740b7d204513c6084eb4a65c785d57061733e07b139460e03189d
+----- CONTENT START -----
+export interface Env {
+  SHARES: R2Bucket;
+  LIMITER: DurableObjectNamespace;
+  ENVIRONMENT: string;
+  ENABLE_UPLOADS: string;
+  ALLOWED_ORIGINS: string;
+  RATE_SALT: string;
+}
+export const MAX_BYTES = 8 * 1024 * 1024 + 64;
+export const TTL_VALUES = [60, 900, 3600, 86400];
+export function allowedOrigin(origin: string | null, env: Env) {
+  if (!origin) return false;
+  let parsed: URL;
+  try {
+    parsed = new URL(origin);
+  } catch {
+    return false;
+  }
+  if (parsed.origin !== origin) return false;
+  if (
+    env.ALLOWED_ORIGINS.split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .includes(origin)
+  )
+    return true;
+  return (
+    env.ENVIRONMENT === "development" &&
+    ((["localhost", "127.0.0.1"].includes(parsed.hostname) &&
+      parsed.protocol === "http:") ||
+      (parsed.hostname.endsWith(".e2b.app") && parsed.protocol === "https:"))
+  );
+}
+export function checkProduction(env: Env) {
+  if (
+    env.ENVIRONMENT !== "development" &&
+    (!env.RATE_SALT || env.RATE_SALT.length < 32)
+  )
+    throw new HttpError(
+      503,
+      "Relay operator must configure a strong RATE_SALT secret.",
+    );
+}
+export class HttpError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+export function secure(response: Response) {
+  const headers = new Headers(response.headers);
+  headers.set("Cache-Control", "no-store, max-age=0");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "no-referrer");
+  headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  return new Response(response.body, { status: response.status, headers });
+}
+----- CONTENT END -----
+===== END FILE: services/relay/src/config.ts =====
+
+===== BEGIN FILE 31/40: services/relay/src/lib/validation.ts =====
+SHA256: 89b00a5129d42befd908bfaaf8387975884d4e5de920c8d1c9f8ea361fbff6c8
+----- CONTENT START -----
+import { HttpError, MAX_BYTES, TTL_VALUES } from "../config";
+export const validId = (s: string) => /^[A-Za-z0-9_-]{32}$/.test(s);
+export function ttlValue(value: string | null) {
+  if (!value || !/^\d+$/.test(value) || !TTL_VALUES.includes(Number(value)))
+    throw new HttpError(400, "Unsupported link lifetime.");
+  return Number(value);
+}
+export function deletionHash(value: string | null) {
+  if (!value || !/^[a-f0-9]{64}$/.test(value))
+    throw new HttpError(400, "Invalid deletion capability hash.");
+  return value;
+}
+export function deletionToken(request: Request) {
+  const match = request.headers
+    .get("Authorization")
+    ?.match(/^Bearer ([A-Za-z0-9_-]{43})$/);
+  if (!match) throw new HttpError(401, "Deletion capability required.");
+  return match[1];
+}
+export async function hashToken(value: string) {
+  const hash = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return Array.from(new Uint8Array(hash), (b) =>
+    b.toString(16).padStart(2, "0"),
+  ).join("");
+}
+export function constantEqual(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let difference = 0;
+  for (let i = 0; i < a.length; i++)
+    difference |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return difference === 0;
+}
+export function randomId() {
+  return btoa(
+    String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))),
+  )
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+export async function readCiphertext(request: Request) {
+  const type = request.headers
+    .get("Content-Type")
+    ?.split(";")[0]
+    .trim()
+    .toLowerCase();
+  if (type !== "application/octet-stream")
+    throw new HttpError(415, "Only encrypted binary envelopes are accepted.");
+  const declared = request.headers.get("Content-Length");
+  if (declared && (!/^\d+$/.test(declared) || Number(declared) > MAX_BYTES))
+    throw new HttpError(413, "Encrypted model exceeds the size limit.");
+  if (!request.body) throw new HttpError(400, "Missing encrypted envelope.");
+  const reader = request.body.getReader(),
+    chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_BYTES) {
+        await reader.cancel();
+        throw new HttpError(413, "Encrypted model exceeds the size limit.");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const output = new Uint8Array(total);
+  let offset = 0;
+  for (const c of chunks) {
+    output.set(c, offset);
+    offset += c.length;
+  }
+  if (
+    output.length < 33 ||
+    output[0] !== 78 ||
+    output[1] !== 82 ||
+    output[2] !== 78 ||
+    output[3] !== 1
+  )
+    throw new HttpError(400, "Invalid encrypted-envelope header.");
+  return output;
+}
+----- CONTENT END -----
+===== END FILE: services/relay/src/lib/validation.ts =====
+
+===== BEGIN FILE 32/40: services/relay/src/lib/object-store.ts =====
+SHA256: b60343954136ba0b588a9529fe97d78b7d7c929a1702f2cec06cf1e946400798
+----- CONTENT START -----
+import { type Env, HttpError } from "../config";
+import { constantEqual, hashToken } from "./validation";
+const objectKey = (id: string) => "share/" + id;
+export async function storeCipher(
+  env: Env,
+  id: string,
+  bytes: Uint8Array,
+  deleteHash: string,
+  expiresAt: number,
+) {
+  await env.SHARES.put(objectKey(id), bytes, {
+    customMetadata: { deleteHash, expiresAt: String(expiresAt) },
+    httpMetadata: { contentType: "application/octet-stream" },
+  });
+}
+export async function fetchCipher(env: Env, id: string) {
+  const object = await env.SHARES.get(objectKey(id));
+  if (!object) throw new HttpError(404, "Share not found or already removed.");
+  const expiry = Number(object.customMetadata?.expiresAt);
+  if (!Number.isFinite(expiry) || expiry <= Date.now()) {
+    await env.SHARES.delete(object.key);
+    throw new HttpError(410, "Expired share.");
+  }
+  return new Response(object.body, {
+    headers: {
+      "Content-Type": "application/octet-stream",
+      "Content-Length": String(object.size),
+      "Content-Disposition": 'attachment; filename="neuron-model.enc"',
+      "X-Neuron-Expires-At": String(expiry),
+    },
+  });
+}
+export async function removeCipher(env: Env, id: string, token: string) {
+  const object = await env.SHARES.head(objectKey(id));
+  if (!object) throw new HttpError(404, "Share not found or already removed.");
+  if (
+    !constantEqual(
+      await hashToken(token),
+      object.customMetadata?.deleteHash ?? "",
+    )
+  )
+    throw new HttpError(403, "Incorrect deletion capability.");
+  await env.SHARES.delete(object.key);
+}
+export async function purgeExpired(env: Env) {
+  let cursor: string | undefined;
+  let deleted = 0;
+  do {
+    const page = await env.SHARES.list({
+      prefix: "share/",
+      cursor,
+      limit: 200,
+      include: ["customMetadata"],
+    });
+    const expired = page.objects
+      .filter(
+        (o) =>
+          !Number.isFinite(Number(o.customMetadata?.expiresAt)) ||
+          Number(o.customMetadata?.expiresAt) <= Date.now(),
+      )
+      .map((o) => o.key);
+    if (expired.length) {
+      await env.SHARES.delete(expired);
+      deleted += expired.length;
+    }
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+  return deleted;
+}
+----- CONTENT END -----
+===== END FILE: services/relay/src/lib/object-store.ts =====
+
+===== BEGIN FILE 33/40: services/relay/src/lib/rate-limit.ts =====
+SHA256: 243e7ed26a026be9e57c16ce253c92914d04456e2b66ecda0fd95eeecc79caeb
+----- CONTENT START -----
+import { type Env, HttpError } from "../config";
+import { hashToken } from "./validation";
+export async function reserve(
+  env: Env,
+  request: Request,
+  action: "upload" | "download" | "delete",
+) {
+  // Cloudflare supplies CF-Connecting-IP at the edge. Do not trust client-supplied
+  // forwarding headers on an unrelated production Node reverse proxy.
+  const ip = request.headers.get("CF-Connecting-IP") || "local-development";
+  const client = await hashToken(env.RATE_SALT + "|" + ip);
+  const stub = env.LIMITER.get(
+    env.LIMITER.idFromName("neuron-global-budget-v1"),
+  );
+  const response = await stub.fetch("https://budget.internal/reserve", {
+    method: "POST",
+    body: JSON.stringify({ client, action }),
+  });
+  if (response.status === 429)
+    throw new HttpError(
+      429,
+      "Sharing rate limit reached. Retry after the hourly window resets.",
+    );
+  if (!response.ok)
+    throw new HttpError(503, "Sharing budget service unavailable.");
+}
+----- CONTENT END -----
+===== END FILE: services/relay/src/lib/rate-limit.ts =====
+
+===== BEGIN FILE 34/40: services/relay/src/durable-objects/RateLimiter.ts =====
+SHA256: 96eb7f98b6bf3d2f0a58bb2d25d53d7349c8187e36ae6f3e993faad74bf11b45
+----- CONTENT START -----
+type Counts = { upload: number; download: number; delete: number };
+type Budget = { hour: number; global: Counts; clients: Record<string, Counts> };
+const empty = (): Counts => ({ upload: 0, download: 0, delete: 0 });
+const PER_CLIENT: Counts = { upload: 3, download: 30, delete: 20 };
+const GLOBAL: Counts = { upload: 50, download: 500, delete: 500 };
+export class RateLimiter {
+  constructor(private state: DurableObjectState) {}
+  async fetch(request: Request) {
+    let input: { client?: string; action?: keyof Counts };
+    try {
+      input = await request.json();
+    } catch {
+      return new Response("Invalid budget request", { status: 400 });
+    }
+    const action = input.action,
+      client = input.client;
+    if (
+      !action ||
+      !["upload", "download", "delete"].includes(action) ||
+      !client ||
+      !/^[a-f0-9]{64}$/.test(client)
+    )
+      return new Response("Invalid budget request", { status: 400 });
+    const allowed = await this.state.storage.transaction(async (tx) => {
+      const hour = Math.floor(Date.now() / 3600000);
+      let budget = await tx.get<Budget>("budget");
+      if (!budget || budget.hour !== hour)
+        budget = { hour, global: empty(), clients: {} };
+      if (budget.global[action] >= GLOBAL[action]) return false;
+      const personal = budget.clients[client] ?? empty();
+      if (personal[action] >= PER_CLIENT[action]) return false;
+      // The global budgets bound successful new client entries to <=1050/hour.
+      budget.global[action]++;
+      personal[action]++;
+      budget.clients[client] = personal;
+      await tx.put("budget", budget);
+      return true;
+    });
+    return new Response(null, { status: allowed ? 204 : 429 });
+  }
+}
+----- CONTENT END -----
+===== END FILE: services/relay/src/durable-objects/RateLimiter.ts =====
+
+===== BEGIN FILE 35/40: services/relay/src/router.ts =====
+SHA256: cc9b966d225f64cd4c18f00db812139940980812152bd735e9bce0904b227e42
+----- CONTENT START -----
+import {
+  type Env,
+  HttpError,
+  MAX_BYTES,
+  allowedOrigin,
+  checkProduction,
+} from "./config";
+import {
+  validId,
+  ttlValue,
+  deletionHash,
+  deletionToken,
+  randomId,
+  readCiphertext,
+} from "./lib/validation";
+import { storeCipher, fetchCipher, removeCipher } from "./lib/object-store";
+import { reserve } from "./lib/rate-limit";
+export async function route(request: Request, env: Env) {
+  const url = new URL(request.url),
+    base = "/api/shares";
+  if (url.search)
+    throw new HttpError(400, "Query parameters are not supported.");
+  if (url.pathname === base + "/health" && request.method === "GET")
+    return Response.json({
+      service: "neuron-encrypted-relay",
+      version: 1,
+      uploadsEnabled: env.ENABLE_UPLOADS === "true",
+      maxBytes: MAX_BYTES,
+      maxTtlSeconds: 86400,
+    });
+  if (!url.pathname.startsWith(base)) throw new HttpError(404, "Not found.");
+  checkProduction(env);
+  const origin = request.headers.get("Origin");
+  if (origin && !allowedOrigin(origin, env))
+    throw new HttpError(403, "Application origin is not allowed.");
+  if (request.method === "POST" || request.method === "DELETE") {
+    if (
+      !allowedOrigin(origin, env) ||
+      request.headers.get("X-Neuron-Client") !== "1"
+    )
+      throw new HttpError(403, "Same-origin application request required.");
+  }
+  if (url.pathname === base && request.method === "POST") {
+    if (env.ENABLE_UPLOADS !== "true")
+      throw new HttpError(503, "Relay uploads are disabled by the operator.");
+    const ttl = ttlValue(request.headers.get("X-Neuron-TTL")),
+      hash = deletionHash(request.headers.get("X-Neuron-Delete-Hash"));
+    await reserve(env, request, "upload");
+    const bytes = await readCiphertext(request),
+      id = randomId(),
+      expiresAt = Date.now() + ttl * 1000;
+    await storeCipher(env, id, bytes, hash, expiresAt);
+    return Response.json({ id, expiresAt }, { status: 201 });
+  }
+  const match = url.pathname.match(/^\/api\/shares\/([A-Za-z0-9_-]{32})$/);
+  if (!match || !validId(match[1]))
+    throw new HttpError(404, "Share route not found.");
+  const id = match[1];
+  if (request.method === "GET") {
+    await reserve(env, request, "download");
+    return fetchCipher(env, id);
+  }
+  if (request.method === "DELETE") {
+    const token = deletionToken(request);
+    await reserve(env, request, "delete");
+    await removeCipher(env, id, token);
+    return new Response(null, { status: 204 });
+  }
+  throw new HttpError(405, "Method not allowed.");
+}
+----- CONTENT END -----
+===== END FILE: services/relay/src/router.ts =====
+
+===== BEGIN FILE 36/40: services/relay/src/index.ts =====
+SHA256: 7da7f97cd45a0bf2cb0d9e7ca6eeea53681e8277a138370d1dbee4ed117f5e0a
+----- CONTENT START -----
+import { type Env, HttpError, secure } from "./config";
+import { route } from "./router";
+import { purgeExpired } from "./lib/object-store";
+export { RateLimiter } from "./durable-objects/RateLimiter";
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    try {
+      return secure(await route(request, env));
+    } catch (e) {
+      const known = e instanceof HttpError;
+      return secure(
+        Response.json(
+          { error: known ? e.message : "Relay operation failed. Retry later." },
+          {
+            status: known ? e.status : 503,
+            headers: known && e.status === 429 ? { "Retry-After": "3600" } : {},
+          },
+        ),
+      );
+    }
+  },
+  async scheduled(_event: ScheduledEvent, env: Env, context: ExecutionContext) {
+    context.waitUntil(purgeExpired(env));
+  },
+};
+----- CONTENT END -----
+===== END FILE: services/relay/src/index.ts =====
+
+===== BEGIN FILE 37/40: services/relay/vitest.config.ts =====
+SHA256: fdb1365eda5d860a1aceb781fd1353659ef5f38c76bc75860d015d50acdfb58d
+----- CONTENT START -----
+import { defineConfig } from "vitest/config";
+export default defineConfig({
+  test: {
+    environment: "node",
+    include: ["test/relay.test.ts"],
+    testTimeout: 30000,
+    hookTimeout: 60000,
+  },
+});
+----- CONTENT END -----
+===== END FILE: services/relay/vitest.config.ts =====
+
+===== BEGIN FILE 38/40: services/relay/test/relay.test.ts =====
+SHA256: 57667431f60c439931360daa06834b13d3dcecb00eec742e52f0a5986181b78c
+----- CONTENT START -----
+import { beforeAll, afterAll, describe, it, expect } from "vitest";
+import { Miniflare } from "miniflare";
+import { build } from "esbuild";
+import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
+import { allowedOrigin, checkProduction, type Env } from "../src/config";
+import { purgeExpired } from "../src/lib/object-store";
+import { route } from "../src/router";
+let mf: Miniflare;
+let ip = 0;
+const origin = "http://localhost:5173";
+const hash = createHash("sha256").update("a".repeat(43)).digest("hex");
+const cipher = () => new Uint8Array([78, 82, 78, 1, ...Array(60).fill(7)]);
+function headers(extra: Record<string, string> = {}) {
+  return {
+    Origin: origin,
+    "CF-Connecting-IP": "198.51.100." + ++ip,
+    "X-Neuron-Client": "1",
+    ...extra,
+  };
+}
+async function upload(extra: Record<string, string> = {}) {
+  return mf.dispatchFetch("https://relay.test/api/shares", {
+    method: "POST",
+    headers: headers({
+      "Content-Type": "application/octet-stream",
+      "X-Neuron-TTL": "3600",
+      "X-Neuron-Delete-Hash": hash,
+      ...extra,
+    }),
+    body: cipher(),
+  });
+}
+beforeAll(async () => {
+  const result = await build({
+    entryPoints: [fileURLToPath(new URL("../src/index.ts", import.meta.url))],
+    bundle: true,
+    write: false,
+    format: "esm",
+    platform: "browser",
+    target: "es2022",
+  });
+  mf = new Miniflare({
+    modules: true,
+    script: result.outputFiles[0].text,
+    compatibilityDate: "2026-07-01",
+    r2Buckets: ["SHARES"],
+    durableObjects: { LIMITER: { className: "RateLimiter", useSQLite: true } },
+    bindings: {
+      ENVIRONMENT: "development",
+      ENABLE_UPLOADS: "true",
+      ALLOWED_ORIGINS: origin,
+      RATE_SALT: "test-only-salt-not-a-production-secret",
+    },
+  });
+  await mf.ready;
+});
+afterAll(async () => {
+  await mf?.dispose();
+});
+describe("real Worker + R2 + Durable Object relay", () => {
+  it("fails closed when production has no rate secret", () =>
+    expect(() =>
+      checkProduction({ ENVIRONMENT: "production", RATE_SALT: "" } as Env),
+    ).toThrow("RATE_SALT"));
+  it("does not inherit the development preview-origin wildcard in production", () =>
+    expect(
+      allowedOrigin("https://untrusted.e2b.app", {
+        ENVIRONMENT: "production",
+        ALLOWED_ORIGINS: origin,
+      } as Env),
+    ).toBe(false));
+  it("keeps production uploads disabled until explicitly enabled", async () => {
+    const env = {
+      ENVIRONMENT: "production",
+      RATE_SALT: "x".repeat(32),
+      ALLOWED_ORIGINS: origin,
+      ENABLE_UPLOADS: "false",
+    } as Env;
+    const request = new Request("https://relay.test/api/shares", {
+      method: "POST",
+      headers: headers(),
+    });
+    await expect(route(request as never, env)).rejects.toThrow("disabled");
+  });
+  it("purges expired R2 records while retaining live ciphertext", async () => {
+    const bucket = await mf.getR2Bucket("SHARES");
+    await bucket.put("share/expired-for-cron", cipher(), {
+      customMetadata: {
+        expiresAt: String(Date.now() - 1000),
+        deleteHash: hash,
+      },
+    });
+    await bucket.put("share/live-for-cron", cipher(), {
+      customMetadata: {
+        expiresAt: String(Date.now() + 3600000),
+        deleteHash: hash,
+      },
+    });
+    expect(
+      await purgeExpired({ SHARES: bucket } as unknown as Env),
+    ).toBeGreaterThan(0);
+    expect(await bucket.get("share/expired-for-cron")).toBeNull();
+    expect(await bucket.get("share/live-for-cron")).not.toBeNull();
+  });
+
+  it("reports protocol support without enabling a fake endpoint", async () => {
+    const r = await mf.dispatchFetch("https://relay.test/api/shares/health");
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({
+      service: "neuron-encrypted-relay",
+      version: 1,
+      uploadsEnabled: true,
+    });
+    expect(r.headers.get("cache-control")).toContain("no-store");
+  });
+  it("stores exactly ciphertext and returns it without deletion metadata", async () => {
+    const r = await upload();
+    expect(r.status).toBe(201);
+    const data = (await r.json()) as { id: string };
+    expect(data.id).toMatch(/^[A-Za-z0-9_-]{32}$/);
+    const get = await mf.dispatchFetch(
+      "https://relay.test/api/shares/" + data.id,
+      { headers: headers() },
+    );
+    expect(new Uint8Array(await get.arrayBuffer())).toEqual(cipher());
+    expect(get.headers.get("X-Neuron-Delete-Hash")).toBeNull();
+  });
+  it("rejects wrong deletion capability, then revokes with the right one", async () => {
+    const data = (await (await upload()).json()) as { id: string };
+    const path = "https://relay.test/api/shares/" + data.id;
+    const bad = await mf.dispatchFetch(path, {
+      method: "DELETE",
+      headers: headers({ Authorization: "Bearer " + "b".repeat(43) }),
+    });
+    expect(bad.status).toBe(403);
+    const good = await mf.dispatchFetch(path, {
+      method: "DELETE",
+      headers: headers({ Authorization: "Bearer " + "a".repeat(43) }),
+    });
+    expect(good.status).toBe(204);
+    expect((await mf.dispatchFetch(path, { headers: headers() })).status).toBe(
+      404,
+    );
+  });
+  it("enforces expiry and immediately removes stale ciphertext on access", async () => {
+    const id = "e".repeat(32),
+      bucket = await mf.getR2Bucket("SHARES");
+    await bucket.put("share/" + id, cipher(), {
+      customMetadata: {
+        expiresAt: String(Date.now() - 1000),
+        deleteHash: hash,
+      },
+    });
+    const r = await mf.dispatchFetch("https://relay.test/api/shares/" + id, {
+      headers: headers(),
+    });
+    expect(r.status).toBe(410);
+    expect(await bucket.get("share/" + id)).toBeNull();
+  });
+  it("rejects foreign browser origins", async () =>
+    expect((await upload({ Origin: "https://attacker.invalid" })).status).toBe(
+      403,
+    ));
+  it("rejects plaintext and wrong magic envelopes", async () => {
+    const r = await mf.dispatchFetch("https://relay.test/api/shares", {
+      method: "POST",
+      headers: headers({
+        "Content-Type": "application/octet-stream",
+        "X-Neuron-TTL": "3600",
+        "X-Neuron-Delete-Hash": hash,
+      }),
+      body: "raw private image",
+    });
+    expect(r.status).toBe(400);
+  });
+  it("rejects unsupported TTLs", async () =>
+    expect((await upload({ "X-Neuron-TTL": "999999999" })).status).toBe(400));
+  it("rejects invalid deletion hashes", async () =>
+    expect((await upload({ "X-Neuron-Delete-Hash": "short" })).status).toBe(
+      400,
+    ));
+  it("rejects actual oversized ciphertext bodies", async () => {
+    const bytes = new Uint8Array(8 * 1024 * 1024 + 65);
+    bytes.set([78, 82, 78, 1]);
+    const response = await mf.dispatchFetch("https://relay.test/api/shares", {
+      method: "POST",
+      headers: headers({
+        "Content-Type": "application/octet-stream",
+        "X-Neuron-TTL": "3600",
+        "X-Neuron-Delete-Hash": hash,
+      }),
+      body: bytes,
+    });
+    expect(response.status).toBe(413);
+  });
+  it("limits each client to three upload reservations per hour", async () => {
+    const sameIP = "203.0.113.9";
+    for (let i = 0; i < 3; i++)
+      expect((await upload({ "CF-Connecting-IP": sameIP })).status).toBe(201);
+    const r = await upload({ "CF-Connecting-IP": sameIP });
+    expect(r.status).toBe(429);
+    expect(r.headers.get("retry-after")).toBe("3600");
+  });
+  it("rejects deletion without a separate capability", async () => {
+    const data = (await (await upload()).json()) as { id: string };
+    expect(
+      (
+        await mf.dispatchFetch("https://relay.test/api/shares/" + data.id, {
+          method: "DELETE",
+          headers: headers(),
+        })
+      ).status,
+    ).toBe(401);
+  });
+  it("does not treat malformed references as object paths", async () =>
+    expect(
+      (await mf.dispatchFetch("https://relay.test/api/shares/not-a-share"))
+        .status,
+    ).toBe(404));
+});
+----- CONTENT END -----
+===== END FILE: services/relay/test/relay.test.ts =====
+
+===== BEGIN FILE 39/40: docs/sharing-protocol.md =====
+SHA256: b7ff2aba3c81ad5449e3c0bf18e89f7d129df1799c15dc9cfbef80fc84446904
+----- CONTENT START -----
+# NEURON encrypted model sharing — protocol v1
+
+Training remains local. Sharing is optional and online. It distributes the selected supported image classifier, never the project dataset. A trained model can still reveal sensitive information.
+
+## Secrets and framing
+
+The sender creates a fresh AES-256-GCM key and independent 256-bit deletion token using Web Crypto's CSPRNG. Ciphertext bytes are: ASCII NRN, version byte 1, 12-byte random IV, AES-GCM ciphertext with a 128-bit tag. Authenticated additional data is `NEURON-MODEL-SHARE:v1`. Payload is bounded UTF-8 JSON: format/version, model name and a whitelisted validated artifact. Unknown imported fields are stripped before encryption.
+
+A relay POST receives ciphertext, SHA-256 of the deletion token and requested TTL. It generates a 192-bit random object reference. The encryption key NEVER enters the API request; it is in `/#/receive/{reference}/{key}`. URL fragments are not sent in HTTP requests. A recipient removes the incoming key from the visible address bar using replaceState and keeps it in memory; a refresh loses it. Preserve the original secret link to reopen.
+
+The full link is a bearer capability. Anyone holding it can download/decrypt before expiry. The separate deletion token is stored locally in a receipt and sent only in the Authorization header on DELETE. No server-side decryption is possible through this protocol. The relay does not receive or store the decryption key. IP addresses, timing, ciphertext length and expiry are NOT hidden. Browser extensions, compromised client code and shared-link recipients are outside this encryption boundary.
+
+## API (same-origin routing required)
+
+- GET `/api/shares/health`: protocol/version and upload availability.
+- POST `/api/shares`: binary body, `X-Neuron-Client: 1`, `X-Neuron-TTL`, `X-Neuron-Delete-Hash`. Returns reference and server expiry timestamp.
+- GET `/api/shares/{id}`: bounded ciphertext; no deletion metadata returned.
+- DELETE `/api/shares/{id}`: `Authorization: Bearer {deletion token}` and application header. Successful deletion returns 204.
+
+All API responses are no-store. The service worker bypasses this prefix. Mutation requests must have an explicitly allowed browser Origin and application header. This is CSRF/origin hardening, NOT authentication against non-browser clients that can forge headers. No-account anonymous upload always requires abuse/billing oversight; do not call it abuse-proof.
+
+Limits: encrypted envelope <=8 MB +64 bytes. Allowed TTLs: 60, 900, 3600, 86400 seconds; UI exposes 15 minutes/1 hour/24 hours. Download checks enforce expiry immediately; hourly cron physically removes expired objects even if never fetched. Provider backup/retention policy still applies. A scheduled delay does not grant post-expiry downloads through this API. Revocation cannot remove already-downloaded copies or plaintext exports.
+
+A single transactional Durable Object enforces fixed-hour budgets: per-client upload 3, download 30, delete 20; global upload 50, download 500, delete 500. A salted hash of Cloudflare's connecting IP is used, not raw IP in application storage. The worker secret must be strong in production. Global budgets bound successful new client entries; NAT users share limits. These budgets do not cap every possible edge/R2/DO billing cost, and are not a replacement for provider rate controls, alerts and a kill switch. Failed reservations are not refunded to prevent retry abuse.
+
+The server can validate envelope framing/size, NOT prove ciphertext decrypts to a model: it lacks the key. The official client encrypts only whitelisted model content. A malicious direct API client can upload arbitrary bytes disguised as an envelope; governance/abuse controls remain necessary. Expiry and deletion are capabilities, not account recovery.
+
+Receipts live in a SEPARATE IndexedDB database so deleting a project does not lose revocation access automatically. They contain both link and deletion secret. Download them privately. Project backups deliberately omit them. Import receipts only into the same app origin. Forget local receipt is NOT revoke. Clearing browser data without exporting a receipt loses early-revocation access, while expiry remains enforced.
+
+## Deployment
+
+Worker implementation: `services/relay/src`; R2 binding SHARES; SQLite-backed Durable Object LIMITER; scheduled cron. `wrangler.toml` fails closed with uploads disabled. The bucket name is a real resource to provision, not a credential. Keep the R2 bucket private: never enable a public bucket endpoint that bypasses API expiry/deletion. Set exact production ALLOWED_ORIGINS; generate a >=32-character random RATE_SALT using the provider secret manager. Enable uploads only after setting billing alerts, edge rate controls, retention review and tests. Deploy via a reviewed Wrangler installation under Node 22.12+; no deployment is performed by local scripts.
+
+Static frontend and API must share the browser origin. Route `/api/shares*` to the Worker at the provider; do not rely on Vite's development proxy in production. The existing public/\_headers needs host-specific application. Do not ship storage credentials or RATE_SALT in frontend/VITE variables. Do not log full links, fragments, Authorization headers or receipt JSON. Configure access logs and error monitoring accordingly. Cloudflare infrastructure may retain connection metadata independently.
+
+Local Miniflare uses actual Worker/R2/DO runtime behavior but is NOT a public production deployment. It listens on 8787, with ciphertext state under services/relay/.local (gitignored). That state is development-only and may disappear in ephemeral sandboxes or manual cleanup. Web dev and production-preview proxies use server-only NEURON_RELAY_TARGET, default http://127.0.0.1:8787. Browser code always uses relative paths. Local dev allows localhost and HTTPS \*.e2b.app origins; production does not inherit that wildcard.
+
+## Toolchain pins
+
+The root pnpm overrides pin Miniflare’s transitive undici to 7.30.2 and sharp to 0.35.5, tested with this runtime. Earlier resolved versions had registry advisories. Keep these overrides and the generated lockfile; do not silently switch package managers or remove them. Advisory checks are point-in-time, not proof of security.
+----- CONTENT END -----
+===== END FILE: docs/sharing-protocol.md =====
+
+===== BEGIN FILE 40/40: README.md =====
+SHA256: 1351373ef5e51a3c98a6b5d038e9a4b344ee3cc37ddffb9a3706d92e5cba0bde
+----- CONTENT START -----
+# NEURON — Phase 3
+
+Apply this 40-file update on top of the complete Phase 1 + Phase 2 baseline. Real local image training, offline packs, backups and reviewed evolution remain intact. Phase 3 adds optional encrypted, expiring model links using a real Worker/R2/Durable Object relay. No cloud deployment or billing resources are silently created.
+
+## Requirements and commands
+
+Node.js **22.12+** (tested with 22.23.4), pnpm 9.15.5. Relay tooling requires Node 22; do not run the new whole-workspace tests on Node 20.
+
+    pnpm install
+    pnpm typecheck
+    pnpm test
+    pnpm build
+
+Terminal 1: `pnpm dev:relay` (8787). Terminal 2: `pnpm dev` (usually 5173). The relay compiles on startup; restart it after relay source edits. Frontend requests `/api/shares` relative to the app; Vite proxies to 8787. `NEURON_RELAY_TARGET` is a SERVER-ONLY override, not a browser API URL or VITE secret. Both servers must be running for local sharing. Training itself needs no relay.
+
+For production-build/offline testing: `pnpm build`, then `pnpm --filter @neuron/web preview --port 4173 --strictPort`. Keep the relay running for online sharing. Install the production shell and verified encoder in Settings before disconnecting. A complete offline reload is not installed by the dev server. Browser data is origin-specific: a change in scheme/host/port creates a different storage scope. Use a Phase 2 full backup to transfer projects between origins; model caches must be installed separately.
+
+## Share workflow
+
+1. Train/save a model or restore/import an existing supported image model.
+2. Open Predict → Create encrypted share link. Approve upload and choose expiry.
+3. The model is sanitized, encrypted locally, uploaded as ciphertext; images and feedback are omitted.
+4. Copy the full secret link; privately download the deletion receipt as a backup.
+5. Recipient opens link, explicitly downloads/decrypts, inspects metadata, then imports as a NEW local project. Existing projects are not overwritten.
+6. Sender manages receipts at Encrypted share links. Revoke remote link uses the separate deletion token. Forget local receipt is explicitly not revocation.
+
+The recipient page removes the key from the visible address bar. Refreshing that page loses the in-memory key; reopen the original secret link. All links/receipts are sensitive. Models may leak training information. Encryption does not hide network metadata, ciphertext size or expiry. A relay operator can withhold availability; cryptographic confidentiality is not guaranteed availability. Downloaded copies cannot be revoked. An upload cancelled after receipt by the server can leave ciphertext until expiry if the response/reference is lost.
+
+Receipts have a separate IndexedDB database, not a main-project schema migration. Phase 2 data remains database version 2. Close older app tabs before upgrading, preserve existing user changes, and do not clear site data to fix build problems. Project backups do not include share receipts. Keep receipts private and backed up separately. The root pnpm overrides for Miniflare’s undici/sharp dependencies are deliberate tested advisory fixes; retain them and the generated lockfile.
+
+## What is production code vs production deployment
+
+The encryption, client, Worker/R2/DO service, expiry/deletion and browser flows are implemented and exercised locally. Cloud provisioning is NOT performed. Production operator must provision R2, configure the same-origin route, exact allowed origins, RATE_SALT secret, cron, HTTPS/security headers, billing/abuse safeguards and provider retention review. The supplied production config disables uploads by default. See docs/sharing-protocol.md. Static hosting alone cannot asynchronously distribute models without optional storage infrastructure.
+
+The server cannot inspect encrypted content; it checks framing/limits, and the official browser client restricts payloads. Origin checks are not account authentication. Anonymous services remain vulnerable to cost/abuse pressure; quotas, provider controls and alerts are mandatory before public exposure. Local emulation is not cloud deployment certification.
+
+## Remaining work
+
+No WebRTC/P2P, non-image training modalities, worker-isolated training, independent test-set UI, continuous camera streaming, resumable training, encrypted dataset backups, universal device certification or completed release audit. Existing Phase 2 safeguards and limits remain. Old shell caches are retained for old open tabs. Accessibility, physical hardware/GPU/memory, model licensing, security and deployed operational audits remain release gates. The app is not claimed perfect or feature-complete merely because a build passes.
+----- CONTENT END -----
+===== END FILE: README.md =====
+
+END OF PHASE 3 HANDOFF — ALL 40 COMPLETE FILE SECTIONS INCLUDED.
