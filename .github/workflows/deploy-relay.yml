@@ -1,1 +1,32 @@
-# Planned configuration: .github/workflows/deploy-relay.yml
+name: Manually deploy optional encrypted image relay
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: neuron-production-relay
+  cancel-in-progress: false
+jobs:
+  deploy:
+    environment: production-relay
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.4'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:env && pnpm check:source && pnpm typecheck && pnpm test && pnpm build
+      - name: Require operator-managed Cloudflare credentials
+        run: test -n "$CLOUDFLARE_API_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID"
+      - name: Deploy reviewed fail-closed relay configuration
+        working-directory: services/relay
+        run: pnpm dlx wrangler@4.160.1 deploy

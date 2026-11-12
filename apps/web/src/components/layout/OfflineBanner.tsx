@@ -6,7 +6,7 @@ import {
 } from "../../pwa/register";
 import { installUpdate } from "../../pwa/update-manager";
 import { errorMessage } from "../../lib/types";
-export function OfflineBanner() {
+export function OfflineBanner({ tabular = false }: { tabular?: boolean }) {
   const [online, setOnline] = useState(navigator.onLine),
     [, render] = useState(0),
     [error, setError] = useState(""),
@@ -26,8 +26,10 @@ export function OfflineBanner() {
     <>
       {!online && (
         <div className="notice offline-notice">
-          You are offline. Saved projects remain local. Training and predictions
-          require the verified encoder pack.{" "}
+          You are offline. Saved projects remain local.{" "}
+          {tabular
+            ? "Numeric/media training and predictions need no encoder pack after the production shell is installed."
+            : "Image training and predictions require the verified encoder pack."}{" "}
           <a href="#/settings">Check readiness →</a>
         </div>
       )}

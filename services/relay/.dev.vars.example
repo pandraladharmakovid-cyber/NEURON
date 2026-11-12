@@ -1,1 +1,4 @@
-# Planned configuration: services/relay/.dev.vars.example
+ENVIRONMENT=development
+ENABLE_UPLOADS=true
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:4173
+RATE_SALT=replace-with-a-long-random-local-value

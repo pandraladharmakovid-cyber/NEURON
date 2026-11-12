@@ -1,0 +1,27 @@
+export const LIMITS = {
+  fileBytes: 16 * 1024 * 1024,
+  rows: 25000,
+  columns: 100,
+  cells: 500000,
+  cellChars: 4096,
+  headerChars: 100,
+  features: 30,
+  encoded: 512,
+  matrix: 2000000,
+  classes: 20,
+  levels: 16,
+  levelChars: 128,
+  labelChars: 64,
+  modelBytes: 8 * 1024 * 1024,
+  backupBytes: 64 * 1024 * 1024,
+  versions: 50,
+  batchRows: 5000,
+} as const;
+export const DEFAULT_OPTIONS = {
+  epochs: 120,
+  learningRate: 0.03,
+  l2: 0.001,
+  seed: 42,
+  patience: 15,
+  batchSize: 32,
+};

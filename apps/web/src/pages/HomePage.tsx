@@ -16,6 +16,7 @@ import {
 export function HomePage() {
   return (
     <>
+      <section className="tabular-promo"><div><div className="eyebrow">PHASE 06 / COMPLETE LOCAL STUDIOS</div><h2>Text, audio, video. Custom models. Real P2P.</h2><p>Bounded real classifiers and explicit direct transfer, alongside image and CSV workflows.</p></div><a className="btn btn-primary" href="#/media">Open media studio →</a></section>
       <div className="eyebrow">
         <span className="status-dot" /> YOUR IDEAS. NO LIMITS.
       </div>
@@ -101,7 +102,7 @@ export function HomePage() {
                     <div className={i === 0 ? "selected" : ""} key={item.name}>
                       <item.icon size={21} />
                       <span>{item.name}</span>
-                      {i > 0 && <em>Later phase</em>}
+                      <em>Available</em>
                     </div>
                   ))}
                 </div>
@@ -117,6 +118,19 @@ export function HomePage() {
             made intelligent.
           </span>
         </div>
+      </section>
+      <section className="tabular-promo">
+        <div>
+          <span className="eyebrow">NEW / YOUR TABLES CAN LEARN TOO</span>
+          <h2>From CSV to predictions.</h2>
+          <p>
+            Classify categories or predict numeric values, with local worker
+            training and held-out evaluation.
+          </p>
+        </div>
+        <a className="btn btn-secondary" href="#/tabular">
+          Open CSV studio →
+        </a>
       </section>
       <section className="principles">
         {[
@@ -170,9 +184,10 @@ export function HomePage() {
         </a>
       </section>
       <p className="phase-note">
-        Phase 03 · Image classification, offline packs, backups and reviewed
-        feedback are available. Encrypted model links require the optional
-        relay. Other data types remain planned.
+        Phase 06 · Real local image/CSV/text/audio/video classifiers, custom numeric
+        models, private backups, encrypted image links and direct WebRTC model transfer.
+        These are bounded feature pipelines—not arbitrary AI architectures or universal accuracy.
+
       </p>
     </>
   );

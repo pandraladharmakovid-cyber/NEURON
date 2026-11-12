@@ -1,6 +1,6 @@
 {
   "name": "@neuron/web",
-  "version": "0.3.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test --config playwright.config.ts"
   },
   "dependencies": {
     "@tensorflow-models/mobilenet": "2.1.1",
@@ -26,6 +27,8 @@
     "typescript": "5.7.3",
     "vite": "6.4.6",
     "vitest": "4.1.12",
-    "fake-indexeddb": "6.2.4"
+    "fake-indexeddb": "6.2.4",
+    "@playwright/test": "1.65.0",
+    "@axe-core/playwright": "4.14.0"
   }
 }

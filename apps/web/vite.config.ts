@@ -61,6 +61,7 @@ function offlineShell(): Plugin {
     },
   };
 }
+function securityHeaders():Plugin{return {name:'neuron-preview-security-headers',configurePreviewServer(server){const text=readFileSync(new URL('./public/_headers',import.meta.url),'utf8');const headers=text.split('\n').filter(line=>line.startsWith('  ')).map(line=>{const i=line.indexOf(':');return [line.slice(0,i).trim(),line.slice(i+1).trim()];});server.middlewares.use((_req,res,next)=>{for(const [key,value] of headers)res.setHeader(key,value);next();});}};}
 const relayTarget = process.env.NEURON_RELAY_TARGET || "http://127.0.0.1:8787";
 const relayURL = new URL(relayTarget);
 if (
@@ -71,9 +72,10 @@ if (
   throw new Error("Invalid NEURON_RELAY_TARGET");
 const proxy = { "/api/shares": { target: relayTarget, changeOrigin: false } };
 export default defineConfig({
-  plugins: [react(), offlineShell()],
+  plugins: [react(), offlineShell(),securityHeaders()],
   server: { host: "0.0.0.0", allowedHosts: [".e2b.app", "localhost"], proxy },
   preview: { host: "0.0.0.0", allowedHosts: [".e2b.app", "localhost"], proxy },
+  worker: { format: "es" },
   build: {
     target: "es2022",
     rollupOptions: {

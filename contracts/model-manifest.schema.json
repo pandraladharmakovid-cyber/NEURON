@@ -1,1 +1,92 @@
-{}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:neuron:model:formats:v1",
+  "title": "NEURON supported model-only formats",
+  "description": "Wire discriminator contract. Runtime validators enforce all algorithm-specific numeric dimensions and semantic consistency. This discriminator is not a standalone security validator.",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "format",
+        "version",
+        "encoder",
+        "embeddingSize",
+        "labels",
+        "weightSpecs",
+        "weightData",
+        "epochs",
+        "evaluation"
+      ],
+      "properties": {
+        "format": {
+          "const": "neuron-image"
+        },
+        "version": {
+          "const": 1
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "format",
+        "version",
+        "algorithm",
+        "config",
+        "preprocessing",
+        "weights",
+        "bias",
+        "history",
+        "evaluation",
+        "provenance"
+      ],
+      "properties": {
+        "format": {
+          "const": "neuron-tabular"
+        },
+        "version": {
+          "const": 1
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "format",
+        "version",
+        "modality",
+        "extractor",
+        "model"
+      ],
+      "properties": {
+        "format": {
+          "const": "neuron-multimodal"
+        },
+        "version": {
+          "const": 1
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "format",
+        "version",
+        "name",
+        "task",
+        "features",
+        "labels",
+        "coefficients",
+        "intercepts"
+      ],
+      "properties": {
+        "format": {
+          "const": "neuron-custom-linear"
+        },
+        "version": {
+          "const": 1
+        }
+      }
+    }
+  ]
+}

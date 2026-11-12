@@ -1,3 +1,6 @@
 # Deployment
+No cloud resources are created by build/release checks. Root vercel.json is the web deployment configuration; public/_headers documents equivalent static-host headers. workflows/deploy-web.yml and deploy-relay.yml are manual, environment-protected examples: operator must configure production approvals and repository secrets before use. Do not commit provider tokens.
 
-Planned document. Not yet implemented.
+Build with Node >=22.12 and pnpm 9.15.5 using frozen lockfile; output apps/web/dist. Serve HTTPS, correct JS/module MIME types and service-worker.js without long-lived caching. Hash navigation does not need a catch-all HTML rewrite. Security headers must allow local workers, blob media and explicitly listed encoder hosts. Native camera/microphone require a top-level secure context or appropriate host embedding permission.
+
+Relay is optional and image-only. Provision R2 and Durable Object bindings, RATE_SALT secret, explicit ALLOWED_ORIGINS, ENABLE_UPLOADS and a same-origin /api/shares* route; see infra/relay-deployment.md. Default production configuration fails closed. Cross-origin relay URLs are intentionally not an automatic bypass. Confirm quotas, deletion, TTL cleanup, rate limits and logs before enabling uploads. Rollback web source/build independently of user IndexedDB; back up data before schema changes.

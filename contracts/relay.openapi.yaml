@@ -1,1 +1,47 @@
-# Planned configuration: contracts/relay.openapi.yaml
+openapi: 3.1.0
+info:
+  title: NEURON optional encrypted image-model relay
+  version: 1.0.0
+  description: Ciphertext only. Maximum 8 MiB model envelope; TTL 1 hour or 24 hours. No raw datasets, signaling service or CSV upload format. Runtime limits and exact origins are authoritative.
+paths:
+  /api/shares/health:
+    get:
+      responses:
+        '200':
+          description: Public upload-enabled/capability status; not proof of production provisioning.
+  /api/shares:
+    post:
+      parameters:
+        - {in: header, name: Origin, required: true, schema: {type: string}}
+        - {in: header, name: X-Neuron-Client, required: true, schema: {const: '1'}}
+        - {in: header, name: X-Neuron-TTL, required: true, schema: {type: string, enum: ['3600', '86400']}}
+        - {in: header, name: X-Neuron-Delete-Hash, required: true, schema: {type: string, pattern: '^[a-f0-9]{64}$'}}
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: {type: string, contentEncoding: binary}
+      responses:
+        '201': {description: Share ID and expiry milliseconds. Raw deletion token/encryption key are never supplied to upload.}
+        '400': {description: Invalid framing/headers/query parameters.}
+        '403': {description: Origin/client gate rejected.}
+        '413': {description: Body too large.}
+        '429': {description: Rate/budget limit exceeded.}
+        '503': {description: Production not provisioned or uploads disabled.}
+  /api/shares/{id}:
+    parameters:
+      - {in: path, name: id, required: true, schema: {type: string, pattern: '^[A-Za-z0-9_-]{32}$'}}
+    get:
+      responses:
+        '200': {description: Authenticated encrypted envelope bytes with no-store policy. Decrypt locally using fragment key.}
+        '404': {description: Absent/expired/revoked share.}
+        '429': {description: Rate limit exceeded.}
+    delete:
+      parameters:
+        - {in: header, name: Authorization, required: true, schema: {type: string, description: 'Bearer plus independent deletion capability'}}
+        - {in: header, name: Origin, required: true, schema: {type: string}}
+        - {in: header, name: X-Neuron-Client, required: true, schema: {const: '1'}}
+      responses:
+        '204': {description: Remote encrypted link removed; imported copies unaffected.}
+        '403': {description: Invalid deletion capability/origin/client.}
+        '404': {description: Missing share.}

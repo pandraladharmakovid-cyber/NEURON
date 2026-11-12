@@ -1,6 +1,6 @@
 {
   "name": "neuron",
-  "version": "0.3.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.5",
@@ -9,7 +9,12 @@
     "build": "pnpm --filter @neuron/web build && pnpm --filter @neuron/relay build",
     "test": "pnpm --filter @neuron/web test && pnpm --filter @neuron/relay test",
     "typecheck": "pnpm --filter @neuron/web typecheck && pnpm --filter @neuron/relay typecheck",
-    "dev:relay": "pnpm --filter @neuron/relay dev"
+    "dev:relay": "pnpm --filter @neuron/relay dev",
+    "check:env": "node scripts/check-env.mjs",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
+    "release:check": "node scripts/release-check.mjs",
+    "test:e2e": "pnpm --filter @neuron/web test:e2e",
+    "check:source": "node scripts/verify-scaffold.mjs"
   },
   "engines": {
     "node": ">=22.12.0"
@@ -19,5 +24,10 @@
       "miniflare>undici": "7.30.2",
       "miniflare>sharp": "0.35.5"
     }
-  }
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "@axe-core/playwright": "4.14.0"
+  },
+  "license": "UNLICENSED"
 }

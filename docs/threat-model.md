@@ -1,3 +1,6 @@
-# Threat Model
+# Threat model
+Assets: private raw examples, labels/features, model parameters, browser storage and optional encrypted-link deletion capabilities. Trust boundaries: local file input, IndexedDB, workers, peer data channel, optional same-origin encrypted relay and external encoder download.
 
-Planned document. Not yet implemented.
+Controls: bounded structured parsing, finite dimensions/coefficients, checksums, strict custom non-executable format, explicit model import/new IDs, raw-data backups separate from model sharing, per-request relay validation and fail-closed production configuration. CSP constrains scripts/encoder hosts, object-src none, no-referrer and nosniff. Device capture is explicit and disposed on unmount. Peer signaling is manual; remote endpoint and ICE configuration must be trusted.
+
+Residual risks: malicious authorized same-origin code/extensions can read local data; checksums do not authenticate a sender; downloaded JSON backups are plaintext; WebRTC exposes network metadata to peers/ICE providers; linear models leak properties of training data. TLS/hosting/token compromise, user-provided TURN, OS recording and browser bugs are outside application guarantees. No formal penetration-test or regulatory certification is claimed. Never process safety-critical inputs without independent validation.

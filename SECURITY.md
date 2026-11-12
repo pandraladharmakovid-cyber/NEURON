@@ -1,3 +1,4 @@
-# Security
+# Security reporting
+Do not post tokens, raw datasets, deletion capabilities or private peer signaling in a public issue. Report a reproducible security issue privately to the repository owner using their configured security advisory/contact channel. If none is published, ask the owner for a private channel before sending details; this release does not invent a monitored security email.
 
-Planned document. Not yet implemented.
+Include affected commit, browser/OS, sanitized reproduction, impact and minimal non-private input. Rotate exposed deployment secrets and invalidate leaked shares where possible. The application is not designed for safety-critical decisions. See docs/threat-model.md for trust boundaries and residual risks, and docs/deployment.md for fail-closed relay setup. Dependencies are lockfile-pinned and audited by release:check; this is not a substitute for ongoing updates or external security review.

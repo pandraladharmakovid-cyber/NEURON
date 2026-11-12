@@ -95,16 +95,44 @@ export async function deleteProject(id: string) {
       await tx.objectStore(name).delete(key);
   await tx.done;
 }
-export async function commitVersion(version: ModelVersion) {
+export async function commitVersion(
+  version: ModelVersion,
+  expected?: {
+    labels: Project["labels"];
+    samples: { id: string; labelId: string }[];
+  },
+) {
   const db = await database();
   const tx = trackTransaction(
-    db.transaction(["projects", "versions"], "readwrite"),
+    db.transaction(["projects", "versions", "samples"], "readwrite"),
   );
   const project = await tx.objectStore("projects").get(version.projectId);
   if (!project) {
     tx.abort();
     await tx.done.catch(() => {});
     throw new Error("Project no longer exists.");
+  }
+  if (expected) {
+    const current = await tx
+      .objectStore("samples")
+      .index("by-project")
+      .getAll(version.projectId);
+    const signature = (rows: { id: string; labelId: string }[]) =>
+      JSON.stringify(
+        rows
+          .map((s) => [s.id, s.labelId])
+          .sort((a, b) => a[0].localeCompare(b[0])),
+      );
+    if (
+      JSON.stringify(project.labels) !== JSON.stringify(expected.labels) ||
+      signature(current) !== signature(expected.samples)
+    ) {
+      tx.abort();
+      await tx.done.catch(() => {});
+      throw new Error(
+        "Dataset/classes changed during training. The result was not saved; previous model versions are unchanged. Reload the training page.",
+      );
+    }
   }
   await tx.objectStore("versions").add(version);
   await tx
@@ -146,13 +174,11 @@ export async function deleteLabel(project: Project, labelId: string) {
       .index("by-project")
       .getAll(project.id))
       if (s.labelId === labelId) await tx.objectStore(store).delete(s.id);
-  await tx
-    .objectStore("projects")
-    .put({
-      ...current,
-      labels: current.labels.filter((l) => l.id !== labelId),
-      updatedAt: Date.now(),
-    });
+  await tx.objectStore("projects").put({
+    ...current,
+    labels: current.labels.filter((l) => l.id !== labelId),
+    updatedAt: Date.now(),
+  });
   await tx.done;
 }
 export async function importVersion(project: Project, version: ModelVersion) {
@@ -176,14 +202,12 @@ export async function importVersion(project: Project, version: ModelVersion) {
       .getAllKeys(project.id))
       await tx.objectStore(store).delete(key);
   await tx.objectStore("versions").add(version);
-  await tx
-    .objectStore("projects")
-    .put({
-      ...current,
-      labels: version.artifact.labels,
-      activeVersionId: version.id,
-      updatedAt: Date.now(),
-    });
+  await tx.objectStore("projects").put({
+    ...current,
+    labels: version.artifact.labels,
+    activeVersionId: version.id,
+    updatedAt: Date.now(),
+  });
   await tx.done;
 }
 export async function snapshotProject(id: string) {

@@ -1,3 +1,4 @@
+import { oneShotWorker } from "../../lib/worker-client";
 import { trackTransaction } from "../../lib/db";
 import { database } from "../../lib/db";
 import { sha256 } from "../../lib/checksums";
@@ -17,6 +18,30 @@ export async function normalizeImage(file: File): Promise<Blob> {
     throw new Error(`${file.name}: only JPEG, PNG and WebP are supported.`);
   if (file.size > 15 * 1024 * 1024)
     throw new Error(`${file.name}: maximum upload size is 15 MB.`);
+  if (
+    typeof Worker !== "undefined" &&
+    typeof OffscreenCanvas !== "undefined" &&
+    typeof createImageBitmap === "function"
+  ) {
+    return oneShotWorker(
+      () =>
+        new Worker(
+          new URL("../../workers/dataset.worker.ts", import.meta.url),
+          { type: "module" },
+        ),
+      file,
+      (value) => {
+        if (
+          !(value instanceof Blob) ||
+          value.type !== "image/jpeg" ||
+          !value.size ||
+          value.size > 15 * 1024 * 1024
+        )
+          throw new Error("Invalid normalized worker image.");
+        return value;
+      },
+    );
+  }
   const bitmap = await decodeImage(file);
   try {
     if (bitmap.width * bitmap.height > 40_000_000)

@@ -1,0 +1,170 @@
+.skip-link {
+  position: fixed;
+  left: 20px;
+  top: -100px;
+  z-index: 1000;
+  background: #b495ff;
+  color: #0b1220;
+  padding: 12px 20px;
+  border-radius: 8px;
+}
+.skip-link:focus {
+  top: 16px;
+}
+.main-content:focus {
+  outline: none;
+}
+.camera-panel {
+  margin: 16px 0;
+  border: 1px solid #344260;
+  border-radius: 10px;
+  padding: 16px;
+  background: #0c1627;
+}
+.camera-panel video {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  background: #070d18;
+  border-radius: 8px;
+}
+.camera-panel .camera-actions {
+  flex-wrap: wrap;
+}
+.camera-status {
+  color: #a4c5da;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.sample-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+.sample-toolbar .btn {
+  padding: 7px 10px;
+}
+.sample-thumb {
+  position: relative;
+}
+.sample-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sample-thumb:focus-within {
+  outline: 2px solid #b495ff;
+}
+.dataset-toolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+.job-progress {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+}
+.job-progress small {
+  color: #a4b1ca;
+}
+.privacy-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 18px 0;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.privacy-toggle input {
+  margin-top: 5px;
+  accent-color: #b495ff;
+}
+.storage-project {
+  padding: 16px 0;
+  border-bottom: 1px solid #2b3a53;
+}
+.storage-project a {
+  color: #b9a2ed;
+}
+.storage-details {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.storage-report {
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow: auto;
+  background: #0b1526;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+.import-review {
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid #3b506a;
+  border-radius: 8px;
+}
+.export-summary {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0;
+}
+.export-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #283b52;
+  padding-bottom: 10px;
+  font-size: 12px;
+}
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+.camera-panel .error {
+  white-space: normal;
+}
+.sample-thumb button {
+  min-width: 26px;
+  min-height: 26px;
+}
+.camera-panel summary {
+  cursor: pointer;
+  color: #bba1ef;
+}
+.storage-manager .btn {
+  white-space: normal;
+}
+@media (max-width: 650px) {
+  .sample-toolbar {
+    flex-wrap: wrap;
+  }
+  .dataset-toolbar {
+    flex-direction: column;
+  }
+  .export-summary div {
+    flex-direction: column;
+    gap: 5px;
+  }
+  .camera-actions .btn {
+    white-space: normal;
+  }
+  .storage-project .inline {
+    flex-wrap: wrap;
+  }
+}
+
+.nav-label,
+.build-label {
+  color: #91a7c9;
+}

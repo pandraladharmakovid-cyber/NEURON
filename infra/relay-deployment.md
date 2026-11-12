@@ -1,3 +1,4 @@
-# Relay Deployment
+# Optional relay deployment
+The relay supports encrypted image-model shares, not raw datasets or all custom/media formats. Review services/relay/wrangler.toml. Provision the named R2 bucket and Durable Object namespace/migration with your account. Configure a strong RATE_SALT with the provider secret manager, set exact ALLOWED_ORIGINS and only then enable uploads. Route /api/shares* on the web application's origin to the Worker. Keep provider credentials in protected CI secrets.
 
-Planned document. Not yet implemented.
+Run relay tests/build before manual deployment. Verify CORS/origin rejection, body size limit, supported TTLs, bounded read behavior, explicit deletion capability, rate limiting and scheduled expiry cleanup against the real account. Configure provider storage quotas and retention monitoring. An unavailable relay must not break local training or model export. Client encryption does not hide network metadata or replace HTTPS. There is no deployment evidence in this release.

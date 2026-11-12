@@ -1,4 +1,9 @@
+import '../styles/phase6.css';
+import { parseRoute, routeTitle } from "./router";
 import { useEffect, useState, lazy, Suspense } from "react";
+const MediaStudio=lazy(()=>import('../features/multimodal/MediaStudio').then(m=>({default:m.MediaStudio})));
+const CustomStudio=lazy(()=>import('../features/custom/CustomStudio').then(m=>({default:m.CustomStudio})));
+const PeerShareDialog=lazy(()=>import('../features/sharing/PeerShareDialog').then(m=>({default:m.PeerShareDialog})));
 import { AppShell } from "../components/layout/AppShell";
 import { HomePage } from "../pages/HomePage";
 import { ProjectsPage } from "../pages/ProjectsPage";
@@ -21,6 +26,27 @@ const ReceivePage = lazy(() =>
 const SharesPage = lazy(() =>
   import("../pages/SharesPage").then((m) => ({ default: m.SharesPage })),
 );
+import "../styles/tabular.css";
+const TabularProjectsPage = lazy(() =>
+  import("../pages/TabularProjectsPage").then((m) => ({
+    default: m.TabularProjectsPage,
+  })),
+);
+const TabularDatasetPage = lazy(() =>
+  import("../pages/TabularDatasetPage").then((m) => ({
+    default: m.TabularDatasetPage,
+  })),
+);
+const TabularTrainingPage = lazy(() =>
+  import("../pages/TabularTrainingPage").then((m) => ({
+    default: m.TabularTrainingPage,
+  })),
+);
+const TabularPredictPage = lazy(() =>
+  import("../pages/TabularPredictPage").then((m) => ({
+    default: m.TabularPredictPage,
+  })),
+);
 function currentRoute() {
   return location.hash.slice(1) || "/";
 }
@@ -34,41 +60,63 @@ export function App() {
     window.addEventListener("hashchange", update);
     return () => window.removeEventListener("hashchange", update);
   }, []);
-  const match = route.match(
-    /^\/projects\/([^/]+)(?:\/(train|predict|evolve))?$/,
-  );
-  const received = route.match(
-    /^\/receive\/([A-Za-z0-9_-]{32})(?:\/([A-Za-z0-9_-]{43}))?$/,
-  );
+  const parsed = parseRoute(route);
+  useEffect(() => {
+    document.title = routeTitle(parsed) + " · NEURON";
+  }, [route]);
   let page;
-  if (route === "/") page = <HomePage />;
-  else if (route === "/projects") page = <ProjectsPage />;
-  else if (route === "/shares") page = <SharesPage />;
-  else if (received)
-    page = (
-      <ReceivePage
-        key={received[1]}
-        id={received[1]}
-        secret={received[2] ?? ""}
-      />
-    );
-  else if (route === "/settings") page = <SettingsPage />;
-  else if (match) {
-    const id = match[1];
-    page =
-      match[2] === "evolve" ? (
-        <EvolutionPage key={route} id={id} />
-      ) : match[2] === "train" ? (
-        <TrainingPage key={route} id={id} />
-      ) : match[2] === "predict" ? (
-        <PredictPage key={route} id={id} />
-      ) : (
-        <ProjectPage key={route} id={id} />
+  switch (parsed.kind) {
+    case "media":page=<MediaStudio/>;break;
+    case "custom":page=<CustomStudio/>;break;
+    case "peer":page=<PeerShareDialog/>;break;
+    case "home":
+      page = <HomePage />;
+      break;
+    case "projects":
+      page = <ProjectsPage />;
+      break;
+    case "settings":
+      page = <SettingsPage />;
+      break;
+    case "shares":
+      page = <SharesPage />;
+      break;
+    case "receive":
+      page = (
+        <ReceivePage key={parsed.id} id={parsed.id} secret={parsed.secret} />
       );
-  } else page = <NotFoundPage />;
+      break;
+    case "tabular-home":
+      page = <TabularProjectsPage />;
+      break;
+    case "tabular":
+      page =
+        parsed.step === "train" ? (
+          <TabularTrainingPage key={route} id={parsed.id} />
+        ) : parsed.step === "predict" ? (
+          <TabularPredictPage key={route} id={parsed.id} />
+        ) : (
+          <TabularDatasetPage key={route} id={parsed.id} />
+        );
+      break;
+    case "image":
+      page =
+        parsed.step === "train" ? (
+          <TrainingPage key={route} id={parsed.id} />
+        ) : parsed.step === "predict" ? (
+          <PredictPage key={route} id={parsed.id} />
+        ) : parsed.step === "evolve" ? (
+          <EvolutionPage key={route} id={parsed.id} />
+        ) : (
+          <ProjectPage key={route} id={parsed.id} />
+        );
+      break;
+    default:
+      page = <NotFoundPage />;
+  }
   return (
     <AppShell route={route}>
-      <Suspense fallback={<p role="status">Loading image studio…</p>}>
+      <Suspense fallback={<p role="status">Loading workspace…</p>}>
         {page}
       </Suspense>
     </AppShell>

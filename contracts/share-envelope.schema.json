@@ -1,1 +1,41 @@
-{}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Decrypted image-share payload",
+  "type": "object",
+  "required": [
+    "format",
+    "version",
+    "name",
+    "artifact"
+  ],
+  "properties": {
+    "format": {
+      "const": "neuron-shared-model"
+    },
+    "version": {
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "format",
+        "version"
+      ],
+      "properties": {
+        "format": {
+          "const": "neuron-image"
+        },
+        "version": {
+          "const": 1
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "description": "Not the ciphertext: NRN v1 framing and AES-GCM are documented in sharing-protocol.md and enforced by runtime code. Full artifact numeric validation is mandatory."
+}

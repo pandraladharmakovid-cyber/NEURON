@@ -1,3 +1,4 @@
 # Contributing
+Use Node >=22.12 and pnpm 9.15.5. Install with frozen lockfile, install Playwright Chromium and run pnpm release:check --browser. Keep local-first boundaries: no silent upload, model download, device activation or arbitrary model code execution. Never use fake predictions to mask failure.
 
-Planned document. Not yet implemented.
+Add substantive algorithm/repository tests and a browser regression for changed user workflows. Validate imports before atomic persistence, preserve existing project data and clearly separate model artifacts from full backups. Do not introduce empty placeholder exports or duplicate parallel studio implementations. Update capability/security/format docs with real limits. Treat docs/handoffs as historical archives. Review dependency licenses before redistribution; this private source is UNLICENSED.

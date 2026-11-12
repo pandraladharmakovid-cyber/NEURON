@@ -1,58 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FolderPlus, ArrowUpRight, Trash2, Image } from "lucide-react";
-import { listProjects, deleteProject } from "../lib/db";
-import { createProject } from "../features/projects/project.service";
-import { type Project, errorMessage } from "../lib/types";
 import { Button } from "../components/ui/Button";
-import { Dialog } from "../components/ui/Dialog";
+import { ProjectWizard } from "../features/projects/ProjectWizard";
+import { useProjects } from "../features/projects/project.store";
 export function ProjectsPage() {
-  const [items, setItems] = useState<Project[]>([]),
-    [loading, setLoading] = useState(true),
-    [error, setError] = useState(""),
-    [open, setOpen] = useState(false),
-    [name, setName] = useState(""),
-    [busy, setBusy] = useState(false);
-  const refresh = async () => {
-    try {
-      setItems(await listProjects());
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setLoading(false);
-    }
-  };
-  useEffect(() => {
-    void refresh();
-  }, []);
-  async function create() {
-    setBusy(true);
-    setError("");
-    try {
-      const project = await createProject(name);
-      location.hash = `/projects/${project.id}`;
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function remove(p: Project) {
-    if (
-      !confirm(
-        `Permanently delete “${p.name}”, its images and all model versions? This cannot be undone.`,
-      )
-    )
-      return;
-    setBusy(true);
-    try {
-      await deleteProject(p.id);
-      await refresh();
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }
+  const { items, loading, busy, error, remove } = useProjects(),
+    [open, setOpen] = useState(false);
   return (
     <>
       <div className="page-heading">
@@ -66,6 +19,10 @@ export function ProjectsPage() {
         <Button onClick={() => setOpen(true)}>
           <FolderPlus size={17} /> New project
         </Button>
+      </div>
+      <div className="modality-tabs">
+        <span className="current">Image projects</span>
+        <a href="#/tabular">CSV / tabular projects →</a>
       </div>
       {error && (
         <p className="error" role="alert">
@@ -116,43 +73,7 @@ export function ProjectsPage() {
           </Button>
         </div>
       )}
-      {open && (
-        <Dialog
-          title="Create an image project"
-          onClose={() => !busy && setOpen(false)}
-        >
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void create();
-            }}
-          >
-            <label className="field">
-              Project name
-              <input
-                autoFocus
-                value={name}
-                maxLength={64}
-                placeholder="e.g. My plant classifier"
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </label>
-            <p className="muted">
-              Start with two classes, add your images, then train on this
-              device.
-            </p>
-            {error && (
-              <p className="error" role="alert">
-                {error}
-              </p>
-            )}
-            <Button type="submit" disabled={busy || !name.trim()}>
-              {busy ? "Creating…" : "Create project"}
-            </Button>
-          </form>
-        </Dialog>
-      )}
+      {open && <ProjectWizard onClose={() => setOpen(false)} />}
     </>
   );
 }
